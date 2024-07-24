@@ -9,6 +9,7 @@ import tvm
 import scipy.spatial.distance as dist
 import platform 
 from tvm import relay
+import onnxruntime as rt
 import sys
 def simlarity(torch_out, tvm_out):
     print("torch shape:{}, tvm shape:{}".format(torch_out.shape, tvm_out.shape))
@@ -125,6 +126,10 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         input_shape = input_info_dict['input_shape']
         # prepare input data
         input_array = np.fromfile(input_bin_path, dtype=np.float32).reshape(input_shape)
+        # if mode == 'pt':
+        #     input_name = 'input' + str(index)
+        # elif mode == 'onnx':
+        #     input_name = 'input.' + str(index+1)
         input_name = 'input' + str(index)
         shape_list.append((input_name,input_array.shape))
         image_list.append(input_array)
@@ -151,7 +156,10 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         if mode == 'pt':
             mod, params = relay.frontend.from_pytorch(model, shape_list)
         elif mode == 'onnx':
-            mod, params = relay.frontend.from_onnx(model, shape_list)
+            shape_dict = {}
+            for input_name, input_shape in shape_list:
+                shape_dict[input_name] = input_shape
+            mod, params = relay.frontend.from_onnx(model, shape_dict)
         ######################################################################
         # Relay Build
         # -----------
@@ -187,11 +195,28 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
 
 
     # ########################################################################
-    # compare
-    image_list = [torch.from_numpy(image) for image in  image_list]
-    torch_out = model(*image_list)
     tvm_out = tvm_output.asnumpy()[0]
-    simlarity(torch_out.detach().numpy(), tvm_out)
+    # compare
+    if mode == 'pt':
+        image_list = [torch.from_numpy(image) for image in  image_list]
+        torch_out = model(*image_list)
+        numpy_out = torch_out.detach().numpy()
+       
+    elif mode == 'onnx':
+        sess = rt.InferenceSession(model_path) 
+        input_dict = {}
+        for index, image_array in enumerate(image_list):
+      
+            input_name = sess.get_inputs()[index].name 
+            input_dict[input_name] = image_array
+        output_name = sess.get_outputs()[0].name  
+
+        # 准备输入数据  
+        numpy_out = sess.run(None, input_dict)[0]
+    simlarity(numpy_out, tvm_out)
+       
+        
+    
     ######################################################################
     if( (not load_model_flag) and save_model_flag):
         save_model(mod, params, lib, extension, save_dir)

@@ -9,20 +9,32 @@ import os
 # save_dir = r'D:\project\programs\other_project\tvm_project\tvm_test_model\scnet50_torch21_2'
 
 
-#
+# resnet18 pt
+# model_dict = {
+#     'model_path':'/workspace/trans_onnx/project/tvm/run_model/model_zoo/resnet18/resnet18.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             'bin_path':'/workspace/trans_onnx/project/tvm/run_model/model_zoo/resnet18/resnet18_input.bin',
+#             'input_shape':[1,3,224,224]
+#          },
+#     ]
+# }
+
+# resnet18 onnx 
 model_dict = {
-    'model_path':'/workspace/trans_onnx/project/tvm/run_model/model_zoo/resnet18/resnet18.pt',
-    'mode':'pt',
+    'model_path':'/workspace/trans_onnx/project/tvm/run_model/model_zoo/onnx/resnet18/resnet18_sim.onnx',
+    'mode':'onnx',
     'input_info':[
         {
-            'bin_path':'/workspace/trans_onnx/project/tvm/run_model/model_zoo/resnet18/resnet18_input.bin',
+            'bin_path':'/workspace/trans_onnx/project/tvm/run_model/model_zoo/onnx/resnet18/resnet18_input.bin',
             'input_shape':[1,3,224,224]
          },
     ]
 }
 target = "llvm"
 save_model = True
-save_dir = '/workspace/trans_onnx/project/tvm/run_model/model_zoo/resnet18/output'
+save_dir = '/workspace/trans_onnx/project/tvm/run_model/model_zoo/onnx/resnet18/output'
 
 os.makedirs(save_dir, exist_ok= True)
 load_model_flag = True
