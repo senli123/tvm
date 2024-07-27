@@ -11,11 +11,14 @@ import platform
 from tvm import relay
 import onnxruntime as rt
 import sys
-def simlarity(torch_out, tvm_out):
-    print("torch shape:{}, tvm shape:{}".format(torch_out.shape, tvm_out.shape))
-    print("torch min:{}, tvm min:{}".format(np.min(torch_out), np.min(tvm_out)))
-    print("torch max:{}, tvm max:{}".format(np.max(torch_out), np.max(tvm_out)))
-    print("simlarity: {}".format(1 - dist.cosine(torch_out.ravel().astype(np.float32), tvm_out.ravel().astype(np.float32))))
+def simlarity(torch_outs, tvm_outs):
+    assert len(torch_outs) == len(tvm_outs), "torch_out must equal to tvm_out"
+    for index, (torch_out, tvm_out) in enumerate(zip(torch_outs, tvm_outs)):
+        print("===========output_index :{}=============".format(index))
+        print("torch shape:{}, tvm shape:{}".format(torch_out.shape, tvm_out.shape))
+        print("torch min:{}, tvm min:{}".format(np.min(torch_out), np.min(tvm_out)))
+        print("torch max:{}, tvm max:{}".format(np.max(torch_out), np.max(tvm_out)))
+        print("simlarity: {}".format(1 - dist.cosine(torch_out.ravel().astype(np.float32), tvm_out.ravel().astype(np.float32))))
 
 def save_llvm_ir(mod, target, mod_name):
     """保存LLVM IR的回调函数"""
@@ -122,6 +125,7 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
     shape_list = []
     image_list = []
     for index, input_info_dict in enumerate(input_info):
+        input_name = input_info_dict['input_name']
         input_bin_path = input_info_dict['bin_path']
         input_shape = input_info_dict['input_shape']
         # prepare input data
@@ -130,7 +134,7 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         #     input_name = 'input' + str(index)
         # elif mode == 'onnx':
         #     input_name = 'input.' + str(index+1)
-        input_name = 'input' + str(index)
+        # input_name = 'input' + str(index)
         shape_list.append((input_name,input_array.shape))
         image_list.append(input_array)
 
@@ -175,32 +179,49 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
 
     m = graph_executor.GraphModule(lib["default"](dev))
 
-    tvm_time_spent=[]
-    torch_time_spent=[]
-    n_warmup=5
-    n_time=10
-    # tvm_t0 = time.process_time()
-    for i in range(n_warmup+n_time):
-        dtype = "float32"
-        # Set inputs
-        for shape_info, img in zip(shape_list, image_list):
-            m.set_input(shape_info[0], tvm.nd.array(img.astype(dtype)))
-        tvm_t0 = time.time()
-        # Execute
-        m.run()
-        # Get outputs
-        tvm_output = m.get_output(0)
-        tvm_time_spent.append(time.time() - tvm_t0)
-    # tvm_t1 = time.process_time()
-
+    # cal spend time 
+    # tvm_time_spent=[]
+    # torch_time_spent=[]
+    # n_warmup=5
+    # n_time=10
+    # # tvm_t0 = time.process_time()
+    # for i in range(n_warmup+n_time):
+    #     dtype = "float32"
+    #     # Set inputs
+    #     for shape_info, img in zip(shape_list, image_list):
+    #         m.set_input(shape_info[0], tvm.nd.array(img.astype(dtype)))
+    #     tvm_t0 = time.time()
+    #     # Execute
+    #     m.run()
+    #     # Get outputs
+    #     tvm_output = m.get_output(0)
+    #     tvm_time_spent.append(time.time() - tvm_t0)
+    # # tvm_t1 = time.process_time()
+    
+    # tvm infer and get output
+    dtype = "float32"
+    # Set inputs
+    for shape_info, img in zip(shape_list, image_list):
+        m.set_input(shape_info[0], tvm.nd.array(img.astype(dtype)))
+    # Execute
+    m.run()
+    # Get outputs
+    tvm_out = []
+    output_num = m.get_num_outputs()
+    for i in range(output_num):
+        tvm_output = m.get_output(i)
+        tvm_out.append(tvm_output.asnumpy())
 
     # ########################################################################
-    tvm_out = tvm_output.asnumpy()[0]
+    
     # compare
     if mode == 'pt':
         image_list = [torch.from_numpy(image) for image in  image_list]
         torch_out = model(*image_list)
-        numpy_out = torch_out.detach().numpy()
+        if isinstance(torch_out, list) or isinstance(torch_out, tuple):
+            numpy_out = [single_out.detach().numpy() for single_out in torch_out]
+        else:
+            numpy_out = [torch_out.detach().numpy()]
        
     elif mode == 'onnx':
         sess = rt.InferenceSession(model_path) 
