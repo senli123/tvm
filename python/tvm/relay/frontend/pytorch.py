@@ -4022,6 +4022,64 @@ class PyTorchOpConverter:
             attn_weight = _op.reshape(attn_weight, newshape=[-4, batch_size, -1, -2])
         return attn_weight
 
+    def im2col(self, inputs, input_types):
+        data = inputs[0]
+        dtype = input_types[0]
+        kernel_size = inputs[1]
+        dilation = inputs[2]
+        padding = inputs[3]
+        stride = inputs[4]
+        # b, c, ih, iw = data.type_annotation.shape
+        data_shape = self.infer_type(data).shape
+        b = data_shape[0].value
+        c = data_shape[1].value
+        ih = data_shape[2].value
+        iw = data_shape[3].value
+        ih += 2 * padding[0]
+        iw += 2 * padding[1]    
+        if dilation[0] == 1:
+            nh = kernel_size[0]
+        else:
+            nh = kernel_size[0] + dilation[0]
+        if dilation[1] == 1:
+            nw = kernel_size[1]
+        else:
+            nw = kernel_size[1] + dilation[1]
+		# to get indices
+        indices1 = []
+        for i in range(0, kernel_size[0]):
+            s = i * dilation[0]
+            sub_indices = []
+            for j in range(s, ih - nh + s + 1, stride[0]):
+                sub_indices.append(j)
+            indices1.append(sub_indices)
+        indices2 = []
+        for i in range(0, kernel_size[1]):
+            s = i * dilation[1]
+            sub_indices = []
+            for j in range(s, iw - nw + s + 1, stride[1]):
+                sub_indices.append(j)
+            indices2.append(sub_indices)
+        padding = padding
+        out_shape = kernel_size[0] * kernel_size[1] * c
+        out_shape = [b, out_shape, -1]
+        if padding != [0,0]:
+            const_paddings = [[0, 0], [0, 0], [padding[1], padding[1]], [padding[0], padding[0]]]
+            pad_value = 0
+            mode = 'constant'
+            v_0 = _op.nn.pad(data, const_paddings, pad_value= pad_value, pad_mode= mode)
+        else:
+            v_0 = data
+        indices1 = _expr.const(indices1)
+        data_after_adv_index1 = _op.adv_index([_op.transpose(v_0, axes=[2,0,1,3])] + [indices1])
+        v_1 = _op.transpose(data_after_adv_index1, axes=[2,3,0,1,4])
+        indices2 = _expr.const(indices2)
+        data_after_adv_index2 = _op.adv_index([_op.transpose(v_1, axes=[4, 0, 1, 2, 3])] + [indices2])
+        v_2 = _op.transpose(data_after_adv_index2, axes= [2, 3, 4, 5, 0, 1])
+        v_3 = _op.transform.transpose(v_2, [0,1,2,4,3,5])
+        v_4 = _op.transform.reshape(v_3, out_shape)
+        return v_4
+    
     # Operator mappings
     def create_convert_map(self):
         self.convert_map = {
@@ -4302,6 +4360,7 @@ class PyTorchOpConverter:
             "aten::swapaxes": self.transpose,
             "aten::linalg_vector_norm": self.linalg_vector_norm,
             "aten::scaled_dot_product_attention": self.scaled_dot_product_attention,
+            "aten::im2col":self.im2col,
         }
 
     def update_convert_map(self, custom_map):

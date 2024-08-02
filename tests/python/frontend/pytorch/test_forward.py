@@ -5555,7 +5555,18 @@ def test_linalg_vector_norm():
     verify_model(test_fn(order=-np.inf), input_data=input_data)
     verify_model(test_fn(order=0), input_data=input_data)
 
+def test_unfold():
+    """test_unfold"""
+    torch.set_grad_enabled(False)
 
+    input_shape = [1, 1, 9, 9]
+    kernel_size=(3, 3)
+    stride=(2, 2)
+    padding=(0,0)
+    dilation=(3,3)
+    input_data = torch.rand(input_shape).float()
+    verify_model(torch.nn.Unfold(kernel_size=kernel_size, stride=stride, padding=padding,dilation=dilation).float().eval(), input_data=input_data)
+   
 @tvm.testing.uses_gpu
 def test_scaled_dot_product_attention():
     """test_scaled_dot_product_attention"""

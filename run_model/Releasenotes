@@ -1,3 +1,7 @@
 20240727
 1. Support mulit output in pipeline
 2. Support debug Realse msvc for win
+
+20240802
+1. Add new branch develop
+2. Add aten::im2col for unfold to trans other op 
