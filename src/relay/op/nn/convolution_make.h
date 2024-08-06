@@ -35,6 +35,25 @@ namespace tvm {
 namespace relay {
 
 template <typename T>
+inline Expr MakeUnfold(Expr data, Array<IndexExpr> strides, Array<IndexExpr> padding,
+                     Array<IndexExpr> dilation,
+                     Array<IndexExpr> kernel_size, std::string data_layout,
+                     std::string out_layout, DataType out_dtype,
+                     std::string op_name) {
+  auto attrs = make_object<T>();
+  attrs->strides = std::move(strides);
+  attrs->padding = std::move(padding);
+  attrs->dilation = std::move(dilation);
+  attrs->kernel_size = std::move(kernel_size);
+  attrs->data_layout = std::move(data_layout);
+  attrs->out_layout = std::move(out_layout);
+  attrs->out_dtype = std::move(out_dtype);
+  const Op& op = Op::Get(op_name);
+  return Call(op, {data}, Attrs(attrs), {});
+}
+
+
+template <typename T>
 inline Expr MakeConv(Expr data, Expr weight, Array<IndexExpr> strides, Array<IndexExpr> padding,
                      Array<IndexExpr> dilation, int groups, IndexExpr channels,
                      Array<IndexExpr> kernel_size, std::string data_layout,

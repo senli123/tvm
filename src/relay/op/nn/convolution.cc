@@ -408,6 +408,125 @@ with the layer input to produce a tensor of outputs.
     .set_attr<FInferCorrectLayout>("FInferCorrectLayout", ConvInferCorrectLayout<Conv2DAttrs>)
     .set_attr<TOpPattern>("TOpPattern", kOutEWiseFusable);
 
+
+// relay.nn.Unfold
+TVM_REGISTER_NODE_TYPE(UnfoldAttrs);
+
+bool UnfoldRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
+               const TypeReporter& reporter) {
+  ICHECK_EQ(types.size(), 2);
+  const auto* data = types[0].as<TensorTypeNode>();
+  if (data == nullptr) return false;
+  static const Layout kNCHW("NCHW");
+  Layout kOIHW("OIHW");
+
+  const auto* param = attrs.as<UnfoldAttrs>();
+  DataType out_dtype = param->out_dtype;
+  if (out_dtype.bits() == 0) {
+    out_dtype = data->dtype;
+  }
+ 
+  ICHECK(param != nullptr);
+  const Layout in_layout(param->data_layout);
+  // const Layout kernel_layout(param->kernel_layout);
+
+  const auto trans_in_layout = tir::BijectiveLayout(in_layout, kNCHW);
+  if (!trans_in_layout.defined()) {
+    reporter->GetDiagCtx().Emit(
+        Diagnostic::Error(reporter->GetSpan())
+        << "unfold only support input layouts that are convertible from NCHW."
+        << " The provided layout is: " << in_layout);
+    return false;
+  }
+
+  // const auto trans_kernel_layout = tir::BijectiveLayout(kernel_layout, kOIHW);
+  // if (!trans_kernel_layout.defined()) {
+  //   reporter->GetDiagCtx().Emit(Diagnostic::Error(reporter->GetSpan())
+  //                               << "unfold only support kernel layouts that are convertible from "
+  //                               << kOIHW << "."
+  //                               << " The provided layout is: " << kernel_layout);
+  //   return false;
+  // }
+
+  Layout out_layout(param->out_layout == "" ? param->data_layout : param->out_layout);
+  const auto trans_out_layout = tir::BijectiveLayout(out_layout, kNCHW);
+  if (!trans_out_layout.defined()) {
+    reporter->GetDiagCtx().Emit(
+        Diagnostic::Error(reporter->GetSpan())
+        << "unfold only support output layouts that are convertible from NCHW."
+        << "The provided layout is: " << out_layout);
+    return false;
+  }
+  Array<PrimExpr> wshape;
+  if (param->auto_scheduler_rewritten_layout.size() != 0) {
+    wshape = auto_scheduler::GetShapeFromRewrittenLayout(param->auto_scheduler_rewritten_layout,
+                                                          {"ry", "rx", "rc", "ff"});
+  } 
+
+  Array<IndexExpr> dshape_nchw = trans_in_layout.ForwardShape(data->shape);
+  IndexExpr channels, dilated_ksize_y, dilated_ksize_x;
+  channels = dshape_nchw[1];
+  // infer weight if the kernel_size and channels are defined
+  ICHECK_EQ(param->kernel_size.size(), 2);
+  ICHECK_EQ(param->dilation.size(), 2);
+
+
+  dilated_ksize_y = 1 + (param->kernel_size[0] - 1) * param->dilation[0];
+  dilated_ksize_x = 1 + (param->kernel_size[1] - 1) * param->dilation[1];
+  
+  // dilation
+  Array<IndexExpr> oshape({dshape_nchw[0], channels, 0, 0});
+
+  IndexExpr pad_h, pad_w;
+  GetPaddingHeightWidth(param->padding, &pad_h, &pad_w);
+  if (!dshape_nchw[2].as<tir::AnyNode>()) {
+    oshape.Set(2, (indexdiv(dshape_nchw[2] + pad_h - dilated_ksize_y, param->strides[0]) + 1) * channels);
+  } else {
+    oshape.Set(2, (dshape_nchw[2]) * channels);
+  }
+
+  if (!dshape_nchw[3].as<tir::AnyNode>()) {
+    oshape.Set(3, indexdiv(dshape_nchw[3] + pad_w - dilated_ksize_x, param->strides[1]) + 1);
+  } else {
+    oshape.Set(3, dshape_nchw[3]);
+  }
+  oshape = trans_out_layout.BackwardShape(oshape);
+  // assign output type
+  reporter->Assign(types[1], TensorType(oshape, out_dtype));
+  return true;
+}
+
+TVM_REGISTER_GLOBAL("relay.op.nn._make.Unfold")
+    .set_body_typed([](Expr data, Array<IndexExpr> strides, Array<IndexExpr> padding,
+                       Array<IndexExpr> dilation, 
+                       Array<IndexExpr> kernel_size, String data_layout,
+                       String out_layout, DataType out_dtype) {
+      return MakeUnfold<UnfoldAttrs>(data, strides, padding, dilation,
+                                   kernel_size, data_layout, out_layout, out_dtype,
+                                   "nn.Unfold");
+    });
+
+RELAY_REGISTER_OP("nn.Unfold")
+    .describe(R"code(2D convolution layer (e.g. spatial convolution over images).
+
+This layer creates a convolution kernel that is convolved
+with the layer input to produce a tensor of outputs.
+
+- **data**: This depends on the `layout` parameter. Input is 4D array of shape
+            (batch_size, in_channels, height, width) if `layout` is `NCHW`.
+- **weight**: (channels, in_channels, kernel_size[0], kernel_size[1])
+- **out**:  This depends on the `layout` parameter. Output is 4D array of shape
+            (batch_size, channels, out_height, out_width) if `layout` is `NCHW`.
+
+)code" TVM_ADD_FILELINE)
+    .set_attrs_type<UnfoldAttrs>()
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "The input tensor.")
+    .set_support_level(2)
+    .add_type_rel("Unfold", UnfoldRel)
+    .set_attr<FInferCorrectLayout>("FInferCorrectLayout", UnfoldInferCorrectLayout<UnfoldAttrs>)
+    .set_attr<TOpPattern>("TOpPattern", kOutEWiseFusable);
+
 // relay.nn.conv3d
 TVM_REGISTER_NODE_TYPE(Conv3DAttrs);
 

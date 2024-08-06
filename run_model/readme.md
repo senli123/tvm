@@ -97,3 +97,22 @@ os.makedirs(save_dir, exist_ok= True)
 load_model_flag = False
 
 ```
+
+
+#### t2t_vit_t_14_8xb64_in1k
+```python
+model_dict = {
+    'model_path':'D:/project/model_zoo/t2t_vit_t_14_8xb64_in1k/model.pt',
+    'mode':'pt',
+    'input_info':[
+        {
+            "input_name":"inputs",
+            'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
+            'input_shape':[1,3,224,224]
+         },
+    ]
+}
+target = "llvm"
+save_model = True
+save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/t2t_vit_t_14_8xb64_in1k/output'
+```

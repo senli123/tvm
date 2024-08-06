@@ -2095,3 +2095,54 @@ def wrap_compute_layout_transform(topi_compute, schedule_rule="None"):
         return [topi_compute(inputs[0], attrs.src_layout, attrs.dst_layout, schedule_rule)]
 
     return _compute_layout_transform
+
+
+
+
+
+
+@override_native_generic_func("Unfold_strategy")
+def Unfold_strategy(attrs, inputs, out_type, target):
+    """Unfold generic strategy"""
+    logger.warning("Unfold is not optimized for this platform.")
+    layout = attrs.data_layout
+    dilation = get_const_tuple(attrs.dilation)
+    if dilation[0] < 1:
+        raise ValueError("dilation should be a positive value")
+    strategy = _op.OpStrategy()
+    # if layout == "NCW":
+    #     strategy.add_implementation(
+    #         wrap_compute_conv1d(topi.nn.conv1d_ncw),
+    #         wrap_topi_schedule(topi.generic.schedule_conv1d_ncw),
+    #         name="conv1d_ncw.generic",
+    #     )
+    # elif layout == "NWC":
+    #     strategy.add_implementation(
+    #         wrap_compute_conv1d(topi.nn.conv1d_nwc),
+    #         wrap_topi_schedule(topi.generic.schedule_conv1d_nwc),
+    #         name="conv1d_nwc.generic",
+    #     )
+    # else:
+    #     raise ValueError(f"Unsupported conv1d layout {layout}")
+    strategy.add_implementation(
+            wrap_compute_Unfold(topi.nn.Unfold),
+            wrap_topi_schedule(topi.generic.schedule_extern),
+            name="Unfold.generic",
+        )
+    return strategy
+
+# Unfold
+def wrap_compute_Unfold(topi_compute):
+    """wrap Unfold topi compute"""
+
+    def _compute_Unfold(attrs, inputs, out_type):
+        """Compute definition of Unfold"""
+        strides = get_const_tuple(attrs.strides)
+        padding = get_const_tuple(attrs.padding)
+        dilation = get_const_tuple(attrs.dilation)
+        kernel_size = get_const_tuple(attrs.kernel_size)
+        out_dtype = attrs.out_dtype
+        out_dtype = inputs[0].dtype if out_dtype in ("same", "") else out_dtype
+        return [topi_compute(inputs[0], strides, padding, dilation, kernel_size, out_dtype)]
+
+    return _compute_Unfold

@@ -25,20 +25,20 @@ import torch
 
 
 #t2t_vit_t_14_8xb64_in1k
-# model_dict = {
-#     'model_path':'D:/project/model_zoo/t2t_vit_t_14_8xb64_in1k/model.pt',
-#     'mode':'pt',
-#     'input_info':[
-#         {
-#             "input_name":"inputs",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/test_model/test_model_input.bin',
-#             'input_shape':[1,3,224,224]
-#          },
-#     ]
-# }
-# target = "llvm"
-# save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/t2t_vit_t_14_8xb64_in1k/output'
+model_dict = {
+    'model_path':'D:/project/model_zoo/t2t_vit_t_14_8xb64_in1k/model.pt',
+    'mode':'pt',
+    'input_info':[
+        {
+            "input_name":"inputs",
+            'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
+            'input_shape':[1,3,224,224]
+         },
+    ]
+}
+target = "llvm"
+save_model = True
+save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/t2t_vit_t_14_8xb64_in1k/output'
 
 
 # model_dict = {
@@ -120,30 +120,30 @@ import torch
 
 
 #cat
-model_dict = {
-    # 'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/cat.pt',
-    # 'mode':'pt',
-    # 'input_info':[
-    #     {
-    #         "input_name":"x",
-    #         'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/cat_input.bin',
-    #         'input_shape':[1,196,384]
-    #      },
-    # ]
+# model_dict = {
+#     # 'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/cat.pt',
+#     # 'mode':'pt',
+#     # 'input_info':[
+#     #     {
+#     #         "input_name":"x",
+#     #         'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/cat_input.bin',
+#     #         'input_shape':[1,196,384]
+#     #      },
+#     # ]
     
-    'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/onnx/cat/cat_sim.onnx',
-    'mode':'onnx',
-    'input_info':[
-        {
-            "input_name":"input0",
-            'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/onnx/cat/cat_input.bin',
-            'input_shape':[1,196,384]
-         },
-    ]
-}
-target = "llvm"
-save_model = True
-save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/output1'
+#     'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/onnx/cat/cat_sim.onnx',
+#     'mode':'onnx',
+#     'input_info':[
+#         {
+#             "input_name":"input0",
+#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/onnx/cat/cat_input.bin',
+#             'input_shape':[1,196,384]
+#          },
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/output1'
 
 # test model
 # model_dict = {
