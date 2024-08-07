@@ -38,7 +38,7 @@ def Unfold(
     dilation: Union[int, Sequence[int]],
     kernel_size: Union[int, Sequence[int]],
     out_dtype: Union[str, None] = None,
-    auto_scheduler_rewritten_layout: Optional[str] = None,
+    auto_scheduler_rewritten_layout: Optional[str] = "",
     meta_schedule_original_shape=None,
     auto_scheduler_should_rewrite_layout: bool = False,
 ):
@@ -94,70 +94,101 @@ def Unfold(
     Output : tvm.te.Tensor
         N-D with shape [batch, out_channel, out_height, out_width, ...] in `data_layout`
     """
-    dim = len(inp.shape) - 2
-    if out_dtype is None:
-        out_dtype = inp.dtype
-    assert isinstance(stride, int) or len(stride) == dim
-    assert isinstance(dilation, int) or len(dilation) == dim
-    if isinstance(stride, int):
-        strides = [stride for _ in range(dim)]
-    else:
-        strides = stride
+    # dim = len(inp.shape) - 2
+    # if out_dtype is None:
+    #     out_dtype = inp.dtype
+    # assert isinstance(stride, int) or len(stride) == dim
+    # assert isinstance(dilation, int) or len(dilation) == dim
+    # if isinstance(stride, int):
+    #     strides = [stride for _ in range(dim)]
+    # else:
+    #     strides = stride
 
-    if isinstance(dilation, int):
-        dilations = [dilation for _ in range(dim)]
-    else:
-        dilations = list(dilation)
+    # if isinstance(dilation, int):
+    #     dilations = [dilation for _ in range(dim)]
+    # else:
+    #     dilations = list(dilation)
     
-    if isinstance(kernel_size, int):
-        kernel_sizes = [kernel_size for _ in range(dim)]
-    else:
-        kernel_sizes = list(kernel_size)
+    # if isinstance(kernel_size, int):
+    #     kernel_sizes = [kernel_size for _ in range(dim)]
+    # else:
+    #     kernel_sizes = list(kernel_size)
     
-    batch, in_channel, *dimensions = np.array(get_const_tuple(inp.shape))
-    kernel_dimensions = np.array(kernel_sizes)
-    dilated_kernel_dimensions = [(k - 1) * dil + 1 for k, dil in zip(kernel_dimensions, dilations)]
-    pad_begin, pad_end = get_pad_tuple_generic(padding, dilated_kernel_dimensions)
+    # if auto_scheduler_rewritten_layout:
+    #     num_filter, _, *kernel_dimensions = auto_scheduler.get_shape_from_rewritten_layout(
+    #         auto_scheduler_rewritten_layout,
+    #         ["ff", "rc"] + [f"r{i}" for i in ["y", "x", "z"][: len(kernel_dimensions)]],
+    #     )
+       
+    # batch, in_channel, *dimensions = np.array(get_const_tuple(inp.shape))
+    # kernel_dimensions = np.array(kernel_sizes)
+    # dilated_kernel_dimensions = [(k - 1) * dil + 1 for k, dil in zip(kernel_dimensions, dilations)]
+    # pad_begin, pad_end = get_pad_tuple_generic(padding, dilated_kernel_dimensions)
    
-    # compute the output shape
-    out_channel = in_channel
-    out_dimensions = [
-        simplify((d - (k - 1) * dil - 1 + pb + pe) // stride + 1)
-        for d, k, dil, pb, pe, stride in zip(
-            dimensions, kernel_dimensions, dilations, pad_begin, pad_end, strides
-        )
-    ]
-    # compute graph
-    pad_before = list(np.array([0, 0] + pad_begin))
-    pad_after = list(np.array([0, 0] + pad_end))
-    temp = pad(inp, pad_before, pad_after, name="pad_temp")
-    rc = te.reduce_axis((0, in_channel), name="rc")
-    rs = [te.reduce_axis((0, k), name=f"r{i}") for i, k in zip(["y", "x"], kernel_dimensions)]
+    # # compute the output shape
+    # out_channel = in_channel
+    # out_dimensions = [
+    #     simplify((d - (k - 1) * dil - 1 + pb + pe) // stride + 1)
+    #     for d, k, dil, pb, pe, stride in zip(
+    #         dimensions, kernel_dimensions, dilations, pad_begin, pad_end, strides
+    #     )
+    # ]
+    # # compute graph
+    # pad_before = list(np.array([0, 0] + pad_begin))
+    # pad_after = list(np.array([0, 0] + pad_end))
+    # temp = pad(inp, pad_before, pad_after, name="pad_temp")
+    # rc = te.reduce_axis((0, in_channel), name="rc")
+    # rs = [te.reduce_axis((0, k), name=f"r{i}") for i, k in zip(["y", "x"], kernel_dimensions)]
 
-    def compute(*args):
-        nn, ff, *dim_indices = list(np.array(args))
+    # def compute(*args):
+    #     nn, ff, *dim_indices = list(np.array(args))
 
-        simplified_channel_index = rc
+    #     simplified_channel_index = rc
       
-        return temp.__getitem__(
-                tuple(
-                    np.array(
-                        [nn, simplified_channel_index]
-                        + [
-                            di * stride + r * dil
-                            for di, stride, r, dil in zip(dim_indices, strides, rs, dilations)
-                        ]
-                    )
-                )
-            ).astype(out_dtype)
+    #     return temp.__getitem__(
+    #             tuple(
+    #                 np.array(
+    #                     [nn, simplified_channel_index]
+    #                     + [
+    #                         di * stride + r * dil
+    #                         for di, stride, r, dil in zip(dim_indices, strides, rs, dilations)
+    #                     ]
+    #                 )
+    #             )
+    #         ).astype(out_dtype)
 
-    out = te.compute(
-        list(np.array([batch, out_channel] + out_dimensions)),
-        compute,
-        name="Unfold.generic",
-        tag="Unfold.generic"
-    )
-    return out
+    # out = te.compute(
+    #     list(np.array([batch, out_channel] + out_dimensions)),
+    #     compute,
+    #     name="Unfold.generic",
+    #     tag="Unfold.generic",
+    #     varargs_names=list(np.array(["nn", "ff", "yy", "xx"]))
+    # )
+    # return out
+    
+    ishape = inp.shape
+    dim = 1
+    for i in range(1, len(ishape)):
+        dim = dim * ishape[i]
+    oshape = [ishape[0], dim]
+    idxdiv = tvm.tir.indexdiv
+    idxmod = tvm.tir.indexmod
+
+    def unwrap(idx, shape):
+        index = []
+        for s in reversed(shape):
+            index.append(idxmod(idx, s))
+            idx = idxdiv(idx, s)
+        return list(reversed(index))
+
+    return te.compute(oshape, lambda i, j: inp(i, *unwrap(j, ishape[1:])),
+                              name="Unfold.generic",
+        tag="Unfold.generic",)
+
+#     x = inp
+#     return te.compute(x.shape, lambda *i: te.sigmoid(x(*i))
+# , name="Unfold.generic",
+#                     tag="Unfold.generic")
     # ishape = inp.shape
     # dim = 1
     # for i in range(1, len(ishape)):

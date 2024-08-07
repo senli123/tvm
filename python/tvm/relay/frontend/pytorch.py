@@ -4080,6 +4080,12 @@ class PyTorchOpConverter:
         v_4 = _op.transform.reshape(v_3, out_shape)
         return v_4
     
+    def rrelu(self, inputs, input_types):
+        data = inputs[0]
+        lower = float(inputs[1])
+        upper = float(inputs[2])
+        return _op.nn.rrelu(data, lower, upper)
+    
     # Operator mappings
     def create_convert_map(self):
         self.convert_map = {
@@ -4361,6 +4367,7 @@ class PyTorchOpConverter:
             "aten::linalg_vector_norm": self.linalg_vector_norm,
             "aten::scaled_dot_product_attention": self.scaled_dot_product_attention,
             "aten::im2col":self.im2col,
+            "aten::rrelu":self.rrelu,
         }
 
     def update_convert_map(self, custom_map):

@@ -118,7 +118,10 @@ class MirrorPadAttrs(Attrs):
 class LeakyReluAttrs(Attrs):
     """Attributes for nn.leaky_relu"""
 
-
+@tvm._ffi.register_object("relay.attrs.RReluAttrs")
+class RReluAttrs(Attrs):
+    """Attributes for nn.rrelu"""
+    
 @tvm._ffi.register_object("relay.attrs.PReluAttrs")
 class PReluAttrs(Attrs):
     """Attributes for nn.prelu"""

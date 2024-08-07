@@ -16,7 +16,7 @@ from utils import ref_funcs
 executor_kind = tvm.testing.parameter("graph")
 # @tvm.testing.parametrize_targets("llvm", "cpu")  
 # @tvm.testing.requires_llvm  
-def test_unfold(executor_kind, target="llvm", dev=tvm.cpu()):
+def test_unfold(executor_kind, target="llvm", dev=tvm.cpu(0)):
    
     import torch
     import torch.nn as nn
@@ -37,4 +37,5 @@ def test_unfold(executor_kind, target="llvm", dev=tvm.cpu()):
     op_res = relay.create_executor(executor_kind, device=dev, target=target).evaluate(func)(
         x_data
     )
+    nn.RReLU
     tvm.testing.assert_allclose(op_res.numpy(), ref_res.numpy(), rtol=1e-5)

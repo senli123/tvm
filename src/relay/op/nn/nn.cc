@@ -339,6 +339,39 @@ RELAY_REGISTER_OP("nn.leaky_relu")
       return Array<te::Tensor>{topi::leaky_relu(inputs[0], param->alpha)};
     });
 
+// relay.rrelu
+TVM_REGISTER_NODE_TYPE(RReluAttrs);
+
+// Positional relay function to create rrelu operator used by frontend FFI.
+Expr MakeRRelu(Expr data, double lower, double upper) {
+  auto attrs = make_object<RReluAttrs>();
+  attrs->lower = lower;
+  attrs->upper = upper;
+  static const Op& op = Op::Get("nn.rrelu");
+  return Call(op, {data}, Attrs(attrs), {});
+}
+
+TVM_REGISTER_GLOBAL("relay.op.nn._make.rrelu").set_body_typed(MakeRRelu);
+
+RELAY_REGISTER_OP("nn.rrelu")
+    .describe(R"code(r version of a Rectified Linear Unit.
+
+`y = x > 0 ? x : (lower + upper) / 2  * x`
+
+)code" TVM_ADD_FILELINE)
+    .set_attrs_type<RReluAttrs>()
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "Input data.")
+    .set_support_level(3)
+    .add_type_rel("Identity", IdentityRel)
+    .set_attr<FInferCorrectLayout>("FInferCorrectLayout", ElemwiseArbitraryLayout)
+    .set_attr<TOpPattern>("TOpPattern", kElemWise)
+    .set_attr<FTVMCompute>("FTVMCompute", [](const Attrs& attrs, const Array<te::Tensor>& inputs,
+                                             const Type& out_type) {
+      const auto* param = attrs.as<RReluAttrs>();
+      return Array<te::Tensor>{topi::rrelu(inputs[0], param->lower, param->upper)};
+    });
+
 // relay.prelu
 TVM_REGISTER_NODE_TYPE(PReluAttrs);
 

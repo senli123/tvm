@@ -87,6 +87,33 @@ inline tvm::te::Tensor leaky_relu(const tvm::te::Tensor& t, double alpha = 0.1,
 }
 
 /*!
+ * \brief Creates an operation that performs a r rectified linear unit
+ *
+ * \param t The input tensor
+ * \param lower The slope for the small gradient when t < 0
+ * \param upper The slope for the small gradient when t < 0
+ * \param name The name of the operation
+ * \param tag The tag to mark the operation
+ *
+ * \return A Tensor whose op member is the r relu operation
+ */
+inline tvm::te::Tensor rrelu(const tvm::te::Tensor& t, double lower = 0.125,
+                              double upper = 0.333,
+                                  std::string name = "T_rrelu",
+                                  std::string tag = kElementWise) {
+  return tvm::te::compute(
+      t->shape,
+      [&](const tvm::Array<tvm::tir::Var>& i) {
+        auto value = t(i);
+        auto lalpha = tvm::tir::make_const(value.dtype(), lower);
+        auto ualpha = tvm::tir::make_const(value.dtype(), upper);
+        auto alpha = tvm::tir::make_const(value.dtype(), 2.0);
+        return tvm::tir::Select(value > 0, value, value * (lalpha + ualpha) / alpha);
+      },
+      name, tag);
+}
+
+/*!
  * \brief Creates an operation that performs a parametric rectified linear unit
  *
  * \param x The input data tensor

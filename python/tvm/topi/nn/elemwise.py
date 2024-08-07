@@ -64,6 +64,35 @@ def leaky_relu(x, alpha):
 
     return te.compute(x.shape, _compute)
 
+@tvm.te.tag_scope(tag=tag.ELEMWISE)
+def rrelu(x, lower, upper):
+    """Take r relu of input x.
+
+    Parameters
+    ----------
+    x : tvm.te.Tensor
+        Input argument.
+
+    lower : float
+        The slope for the lower gradient when x < 0
+    
+    upper : float
+        The slope for the upper gradient when x < 0
+
+    Returns
+    -------
+    y : tvm.te.Tensor
+        The result.
+    """
+
+    def _compute(*indices):
+        value = x(*indices)
+        lalpha = tvm.tir.const(lower, value.dtype)
+        ualpha = tvm.tir.const(upper, value.dtype)
+        alpha = tvm.tir.const(2.0, value.dtype)
+        return tvm.tir.Select(value > 0, value, value * (lalpha + ualpha) / alpha)
+
+    return te.compute(x.shape, _compute)
 
 @tvm.te.tag_scope(tag=tag.BROADCAST)
 def prelu(x, slope, axis=1):

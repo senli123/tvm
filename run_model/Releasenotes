@@ -8,3 +8,9 @@
 
 20240806
 1. Add unfold relay
+
+20240807
+1. Add rrelu relay
+2. Support torch.nn.RReLU
+3. Add rrelu test
+

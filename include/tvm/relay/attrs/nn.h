@@ -1337,6 +1337,18 @@ struct LeakyReluAttrs : public tvm::AttrsNode<LeakyReluAttrs> {
   }
 };
 
+/*! \brief Attributes for rrelu operator */
+struct RReluAttrs : public tvm::AttrsNode<RReluAttrs> {
+  double lower;
+  double upper;
+  TVM_DECLARE_ATTRS(RReluAttrs, "relay.attrs.RReluAttrs") {
+    TVM_ATTR_FIELD(lower).set_lower_bound(0.0).set_default(0.125).describe(
+        "lower coefficient for the negative half axis.");
+    TVM_ATTR_FIELD(upper).set_lower_bound(0.0).set_default(0.333).describe(
+        "upper coefficient for the negative half axis.");
+  }
+};
+
 /*! \brief Attributes for prelu operator */
 struct PReluAttrs : public tvm::AttrsNode<PReluAttrs> {
   int axis;

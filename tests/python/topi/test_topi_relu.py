@@ -110,7 +110,25 @@ def test_prelu(x, w, axis, weight_reshape):
     foo(x_tvm, w_tvm, b)
     out_np = _prelu_numpy(x_np, w_np)
     tvm.testing.assert_allclose(b.numpy(), out_np, rtol=1e-5)
+    
+input_shape, lower, upper  = tvm.testing.parameters((100, 0.2, 0.5))
 
 
+def test_rrelu(input_shape, lower, upper):
+    A = te.placeholder((input_shape,), name="A")
+    B = topi.nn.rrelu(A, lower, upper)
+    s = te.create_schedule([B.op])
+
+    a_np = np.random.uniform(low = -0.5, high = 0.5, size=get_const_tuple(A.shape)).astype(A.dtype)
+    b_np = a_np * (a_np > 0) + a_np * (a_np < 0) * (lower + upper) / 2
+    dev = tvm.cpu(0)
+    a = tvm.nd.array(a_np, dev)
+    b = tvm.nd.array(np.zeros(get_const_tuple(B.shape), dtype=B.dtype), dev)
+    # Building with the CSE pass disabled
+    with tvm.transform.PassContext(opt_level=3, disabled_pass=["tir.CommonSubexprElimTIR"]):
+        foo = tvm.build(s, [A, B], "llvm", name="rrelu")
+    foo(a, b)
+    tvm.testing.assert_allclose(b.numpy(), b_np, rtol=1e-5)
+    
 if __name__ == "__main__":
     tvm.testing.main()

@@ -671,7 +671,30 @@ def test_infer_type_leaky_relu(target, dev, executor_kind):
     op_res = relay.create_executor(executor_kind, device=dev, target=target).evaluate(func)(x_data)
     tvm.testing.assert_allclose(op_res.numpy(), ref_res, rtol=1e-5)
 
+def test_infer_type_rrelu(target, dev, executor_kind):
+    n, c, h, w = te.size_var("n"), te.size_var("c"), te.size_var("h"), te.size_var("w")
+    x = relay.var("x", relay.TensorType((n, c, h, w), "float32"))
+    y = relay.nn.rrelu(x, lower=0.1, upper= 0.5)
+    assert "lower=0.1" in y.astext()
+    assert "upper=0.5" in y.astext()
+    yy = run_infer_type(y)
+    assert yy.checked_type == relay.TensorType((n, c, h, w), "float32")
 
+    shape = (1, 5, 10, 10)
+    dtype = "float32"
+    x = relay.var("x", relay.TensorType(shape, dtype))
+    z = relay.nn.rrelu(x, lower=0.1, upper= 0.5)
+    assert "lower=0.1" in z.astext()
+    assert "upper=0.5" in z.astext()
+    zz = run_infer_type(z)
+    assert zz.checked_type == relay.TensorType(shape, dtype)
+    func = relay.Function([x], z)
+    x_data = np.random.uniform(low=-1, high=1, size=shape).astype(dtype)
+    ref_res = np.where(x_data > 0, x_data, x_data * (0.1 + 0.5) / 2)
+
+    op_res = relay.create_executor(executor_kind, device=dev, target=target).evaluate(func)(x_data)
+    tvm.testing.assert_allclose(op_res.numpy(), ref_res, rtol=1e-5)
+    
 class TestInferTypePrelu:
     dtype = tvm.testing.parameter("float32")
 

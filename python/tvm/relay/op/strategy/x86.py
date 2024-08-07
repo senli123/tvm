@@ -871,6 +871,6 @@ def Unfold_strategy_cpu(attrs, inputs, out_type, target):
     strategy.add_implementation(
                 wrap_compute_Unfold(topi.nn.Unfold),
                 wrap_topi_schedule(topi.generic.schedule_extern),
-                name="Unfold_nchw.x86",
+                name="Unfold.generic",
             )
     return strategy

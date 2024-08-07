@@ -701,6 +701,8 @@ reg.register_schedule("nn.adaptive_avg_pool3d", strategy.schedule_adaptive_pool)
 # leaky_relu
 reg.register_broadcast_schedule("nn.leaky_relu")
 
+# rrelu
+reg.register_broadcast_schedule("nn.rrelu")
 
 # prelu
 reg.register_broadcast_schedule("nn.prelu")

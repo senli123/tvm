@@ -776,6 +776,19 @@ def test_forward_prelu():
     verify_model(torch.nn.PReLU(num_parameters=1).eval(), input_data=input_data)
     # Test when input dims < 2
     verify_model(torch.nn.PReLU(num_parameters=1).eval(), input_data=torch.randn(2))
+    
+    
+# @tvm.testing.uses_gpu
+def test_forward_rrelu():
+    """test_forward_rrelu"""
+    torch.set_grad_enabled(False)
+    input_shape = [1, 3, 10, 10]
+    input_data = torch.rand(input_shape).float()
+    verify_model(torch.nn.RReLU().eval(), input_data=input_data)
+
+    verify_model(torch.nn.RReLU(lower= 0.2, upper=0.5).eval(), input_data=input_data)
+    
+    verify_model(torch.nn.RReLU(lower= 0.1, upper=0.2).eval(), input_data=torch.randn(2))
 
 
 @tvm.testing.uses_gpu
@@ -790,8 +803,7 @@ def test_forward_leakyrelu():
     verify_model(
         torch.nn.LeakyReLU(negative_slope=1.25, inplace=True).eval(), input_data=input_data
     )
-
-
+    
 @tvm.testing.uses_gpu
 def test_forward_elu():
     """test_forward_elu"""
