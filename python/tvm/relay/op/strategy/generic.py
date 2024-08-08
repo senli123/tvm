@@ -2098,51 +2098,81 @@ def wrap_compute_layout_transform(topi_compute, schedule_rule="None"):
 
 
 
+# unfold
+def wrap_compute_unfold(
+    topi_compute,
+    *,
+    need_data_layout=False,
+    need_kernel_layout=False,
+    need_out_layout=False,
+    has_groups=False,
+    need_auto_scheduler_layout=False,
+    need_meta_schedule_layout=False,
+):
+    """Wrap unfold topi compute"""
 
-
-
-@override_native_generic_func("Unfold_strategy")
-def Unfold_strategy(attrs, inputs, out_type, target):
-    """Unfold generic strategy"""
-    logger.warning("Unfold is not optimized for this platform.")
-    layout = attrs.data_layout
-    dilation = get_const_tuple(attrs.dilation)
-    if dilation[0] < 1:
-        raise ValueError("dilation should be a positive value")
-    strategy = _op.OpStrategy()
-    # if layout == "NCW":
-    #     strategy.add_implementation(
-    #         wrap_compute_conv1d(topi.nn.conv1d_ncw),
-    #         wrap_topi_schedule(topi.generic.schedule_conv1d_ncw),
-    #         name="conv1d_ncw.generic",
-    #     )
-    # elif layout == "NWC":
-    #     strategy.add_implementation(
-    #         wrap_compute_conv1d(topi.nn.conv1d_nwc),
-    #         wrap_topi_schedule(topi.generic.schedule_conv1d_nwc),
-    #         name="conv1d_nwc.generic",
-    #     )
-    # else:
-    #     raise ValueError(f"Unsupported conv1d layout {layout}")
-    strategy.add_implementation(
-            wrap_compute_Unfold(topi.nn.Unfold),
-            wrap_topi_schedule(topi.generic.schedule_extern),
-            name="Unfold.generic",
-        )
-    return strategy
-
-# Unfold
-def wrap_compute_Unfold(topi_compute):
-    """wrap Unfold topi compute"""
-
-    def _compute_Unfold(attrs, inputs, out_type):
-        """Compute definition of Unfold"""
-        strides = get_const_tuple(attrs.strides)
+    def _compute_unfold(attrs, inputs, out_type):
         padding = get_const_tuple(attrs.padding)
+        strides = get_const_tuple(attrs.strides)
         dilation = get_const_tuple(attrs.dilation)
-        kernel_size = get_const_tuple(attrs.kernel_size)
+        # data_layout = attrs.get_str("data_layout")
+        # kernel_layout = attrs.get_str("kernel_layout")
+        # out_layout = attrs.get_str("out_layout")
+        data_layout = attrs.data_layout
+        kernel_layout = attrs.kernel_layout
+        out_layout = attrs.out_layout
         out_dtype = attrs.out_dtype
         out_dtype = inputs[0].dtype if out_dtype in ("same", "") else out_dtype
-        return [topi_compute(inputs[0], strides, padding, dilation, kernel_size, out_dtype)]
+        args = [inputs[0], inputs[1], strides, padding, dilation]
+        if has_groups:
+            args.append(attrs.groups)
+        if need_data_layout:
+            args.append(data_layout)
+        if need_kernel_layout:
+            args.append(kernel_layout)
+        if need_out_layout:
+            args.append(out_layout)
+        args.append(out_dtype)
+        if need_auto_scheduler_layout:
+            args.append(get_auto_scheduler_rewritten_layout(attrs))
+        elif need_meta_schedule_layout:
+            args.append("")
+            args.append(get_meta_schedule_original_shape(attrs))
+        return [topi_compute(*args)]
 
-    return _compute_Unfold
+    return _compute_unfold
+
+
+@override_native_generic_func("unfold_strategy")
+def unfold_strategy(attrs, inputs, out_type, target):
+    """unfold generic strategy"""
+    logger.warning("unfold is not optimized for this platform.")
+    strategy = _op.OpStrategy()
+    data, kernel = inputs
+    dilation = get_const_tuple(attrs.dilation)
+    groups = attrs.groups
+    layout = attrs.data_layout
+    kernel_layout = attrs.kernel_layout
+    (dilation_h, dilation_w) = dilation
+    if dilation_h < 1 or dilation_w < 1:
+        raise ValueError("dilation should be positive value")
+
+    if groups == 1:
+        if layout == "NCHW":
+            assert kernel_layout == "OIHW"
+            strategy.add_implementation(
+                wrap_compute_unfold(topi.nn.unfold_nchw),
+                wrap_topi_schedule(topi.generic.schedule_unfold_nchw),
+                name="unfold_nchw.generic",
+            )
+        else:
+            raise RuntimeError(f"Unsupported unfold layout {layout}")
+    else:  
+        raise RuntimeError(f"Unsupported unfold layout {layout}")
+    return strategy
+
+
+
+
+
+

@@ -860,17 +860,17 @@ def batch_norm_strategy_cpu(attrs, inputs, out_type, target):
 
 
 
-@Unfold_strategy.register("cpu")
-def Unfold_strategy_cpu(attrs, inputs, out_type, target):
-    """Unfold x86 strategy"""
-    # layout = attrs.data_layout
-    dilation = get_const_tuple(attrs.dilation)
-    if dilation[0] < 1:
-        raise ValueError("dilation should be a positive value")
-    strategy = _op.OpStrategy()
-    strategy.add_implementation(
-                wrap_compute_Unfold(topi.nn.Unfold),
-                wrap_topi_schedule(topi.generic.schedule_extern),
-                name="Unfold.generic",
-            )
-    return strategy
+# @unfold_strategy.register("cpu")
+# def unfold_strategy_cpu(attrs, inputs, out_type, target):
+#     """unfold x86 strategy"""
+#     # layout = attrs.data_layout
+#     dilation = get_const_tuple(attrs.dilation)
+#     if dilation[0] < 1:
+#         raise ValueError("dilation should be a positive value")
+#     strategy = _op.OpStrategy()
+#     strategy.add_implementation(
+#                 wrap_compute_unfold(topi.nn.unfold),
+#                 wrap_topi_schedule(topi.generic.schedule_extern),
+#                 name="Unfold.generic",
+#             )
+#     return strategy

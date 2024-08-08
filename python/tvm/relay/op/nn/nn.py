@@ -3844,15 +3844,19 @@ def conv2d_backward_weight(
         kernel_layout,
         out_dtype,
     )
-
-
-def Unfold(
+    
+    
+def unfold(
     data,
+    weight,
     strides=(1, 1),
     padding=(0, 0),
     dilation=(1, 1),
+    groups=1,
+    channels=None,
     kernel_size=None,
     data_layout="NCHW",
+    kernel_layout="OIHW",
     out_layout="",
     out_dtype="",
 ):
@@ -3933,13 +3937,17 @@ def Unfold(
     # TODO enforce 4-way padding in topi/nn/conv2d after #4644 merged
     # convert 2-way padding to 4-way padding
     padding = get_pad_tuple2d(padding)
-    return _make.Unfold(
+    return _make.unfold(
         data,
+        weight,
         strides,
         padding,
         dilation,
+        groups,
+        channels,
         kernel_size,
         data_layout,
+        kernel_layout,
         out_layout,
         out_dtype,
     )

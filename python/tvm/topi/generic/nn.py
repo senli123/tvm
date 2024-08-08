@@ -121,6 +121,21 @@ def schedule_conv2d_nchw(outs):
     """
     return _default_schedule(outs, False)
 
+def schedule_unfold_nchw(outs):
+    """Schedule for unfold_nchw
+
+    Parameters
+    ----------
+    outs: Array of Tensor
+          The computation graph description of conv2d_nchw
+          in the format of an array of tensors.
+
+    Returns
+    -------
+    sch: Schedule
+        The computation schedule for the op.
+    """
+    return _default_schedule(outs, False)
 
 def schedule_conv2d_nhwc_pack(outs):
     """Schedule for conv2d_nhwc_pack

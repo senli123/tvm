@@ -207,8 +207,8 @@ reg.register_strategy("nn.conv1d", strategy.conv1d_strategy)
 reg.register_strategy("nn.conv2d", strategy.conv2d_strategy)
 
 
-# Unfold
-reg.register_strategy("nn.Unfold", strategy.Unfold_strategy)
+# unfold
+reg.register_strategy("nn.unfold", strategy.unfold_strategy)
 
 @reg.register_alter_op_layout("nn.conv2d")
 def alter_op_layout_conv2d(attrs, inputs, tinfos, out_type):
