@@ -419,6 +419,7 @@ bool UnfoldRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
   const auto* weight = types[1].as<TensorTypeNode>();
   if (data == nullptr) return false;
   static const Layout kNCHW("NCHW");
+  static const Layout kNCH("NCH");
   Layout kOIHW("OIHW");
 
   const auto* param = attrs.as<UnfoldAttrs>();
@@ -463,7 +464,7 @@ bool UnfoldRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
   }
 
   Layout out_layout(param->out_layout == "" ? param->data_layout : param->out_layout);
-  const auto trans_out_layout = tir::BijectiveLayout(out_layout, kNCHW);
+  const auto trans_out_layout = tir::BijectiveLayout(kNCH, kNCH);
   if (!trans_out_layout.defined()) {
     reporter->GetDiagCtx().Emit(
         Diagnostic::Error(reporter->GetSpan())
@@ -588,21 +589,24 @@ bool UnfoldRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
     dilated_ksize_x = 1 + (wshape[3] - 1) * param->dilation[1];
   }
   // dilation
-  Array<IndexExpr> oshape({dshape_nchw[0], channels, 0, 0});
-
+  Array<IndexExpr> oshape({dshape_nchw[0], 0, 0});
   IndexExpr pad_h, pad_w;
   GetPaddingHeightWidth(param->padding, &pad_h, &pad_w);
-  if (!dshape_nchw[2].as<tir::AnyNode>()) {
-    oshape.Set(2, indexdiv(dshape_nchw[2] + pad_h - dilated_ksize_y, param->strides[0]) + 1);
-  } else {
-    oshape.Set(2, dshape_nchw[2]);
-  }
+  IndexExpr oh = indexdiv(dshape_nchw[2] + pad_h - dilated_ksize_y, param->strides[0]) + 1;
+  IndexExpr ow = indexdiv(dshape_nchw[3] + pad_w - dilated_ksize_x, param->strides[1]) + 1;
+  oshape.Set(1, channels * param->kernel_size[0] * param->kernel_size[1]);
+  oshape.Set(2, oh * ow);
+  // if (!dshape_nchw[2].as<tir::AnyNode>()) {
+  //   oshape.Set(2, indexdiv(dshape_nchw[2] + pad_h - dilated_ksize_y, param->strides[0]) + 1);
+  // } else {
+  //   oshape.Set(2, dshape_nchw[2]);
+  // }
 
-  if (!dshape_nchw[3].as<tir::AnyNode>()) {
-    oshape.Set(3, indexdiv(dshape_nchw[3] + pad_w - dilated_ksize_x, param->strides[1]) + 1);
-  } else {
-    oshape.Set(3, dshape_nchw[3]);
-  }
+  // if (!dshape_nchw[3].as<tir::AnyNode>()) {
+  //   oshape.Set(3, indexdiv(dshape_nchw[3] + pad_w - dilated_ksize_x, param->strides[1]) + 1);
+  // } else {
+  //   oshape.Set(3, dshape_nchw[3]);
+  // }
   oshape = trans_out_layout.BackwardShape(oshape);
   // assign output type
   reporter->Assign(types[2], TensorType(oshape, out_dtype));

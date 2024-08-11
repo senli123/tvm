@@ -213,55 +213,27 @@ def unfold(
     pad_before = list(np.array([0, 0] + pad_begin)[data_permutation_from])
     pad_after = list(np.array([0, 0] + pad_end)[data_permutation_from])
     temp = pad(inp, pad_before, pad_after, name="pad_temp")
-    rc = te.reduce_axis((0, in_channel // groups), name="rc")
-    rs = [te.reduce_axis((0, k), name=f"r{i}") for i, k in zip(["y", "x", "z"], kernel_dimensions)]
-
-    def compute(*args):
-        nn, ff, *dim_indices = list(np.array(args)[data_permutation_to])
-
-        if groups == 1:
-            simplified_channel_index = rc
-        else:
-            simplified_channel_index = ff // (num_filter // groups) * (in_channel // groups) + rc
-
-        return te.sum(
-            temp.__getitem__(
-                tuple(
-                    np.array(
-                        [nn, simplified_channel_index]
-                        + [
-                            di * stride + r * dil
-                            for di, stride, r, dil in zip(dim_indices, strides, rs, dilations)
-                        ]
-                    )[data_permutation_from]
-                )
-            ).astype(out_dtype),
-            # Schedules depend on reduction axes being in the same order as the
-            # layout, so we reorder here.
-            axis=np.array([rc, *rs])[data_permutation_from_reductions].tolist(),
-        )
-        
-        # return temp.__getitem__(
-        #         tuple(
-        #             np.array(
-        #                 [nn, simplified_channel_index]
-        #                 + [
-        #                     di * stride + r * dil
-        #                     for di, stride, r, dil in zip(dim_indices, strides, rs, dilations)
-        #                 ]
-        #             )[data_permutation_from]
-        #         )
-        #     ).astype(out_dtype)
-
-    out = te.compute(
-        list(np.array([batch, out_channel] + out_dimensions)[data_permutation_from]),
-        compute,
-        # tag is expected to be lowercase
-        tag=f"{'group_' if groups > 1 else ''}conv{dim}d_{data_layout.lower()}",
-        name=f"{'group_' if groups > 1 else ''}conv{dim}d_{data_layout.lower()}",
-        attrs={"layout_free_placeholders": [filt]} if auto_scheduler_should_rewrite_layout else {},
-        varargs_names=list(np.array(["nn", "ff", "yy", "xx", "zz"])[data_permutation_from]),
-    )
+    k = kernel_dimensions
+    h = inp.shape[2]
+    w = inp.shape[3]
+    p = padding
+    if isinstance(padding, int):
+        p = [padding for _ in range(dim)]
+    else:
+        p = padding
+    s = strides
+    c = inp.shape[1]
+    d = dilations
+    on = batch
+    oc1 = k[0] * k[1]
+    oh = (h + 2 * p[0] - (k[0] + 2 *(d[0] - 1))) // s[0] + 1
+    ow = (w + 2 * p[1] - (k[1] + 2 *(d[1] - 1))) // s[1] + 1
+    ol = oh * ow
+    oc = c * oc1
+    out = te.compute((on, oc, ol), 
+                        lambda i, j, m: temp[i, j // oc1,  
+                                        m // ow * s[0] + j % oc1 // k[1] * d[0],
+                                        m % ow * s[1] + j % oc1 % k[1] * d[1]], name="T")
     # if we used autoscheduler's changed layout we need to rewrite the ordering
     # of the output dimensions
     if auto_scheduler_rewritten_layout:

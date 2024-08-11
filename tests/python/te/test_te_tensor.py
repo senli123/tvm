@@ -285,7 +285,7 @@ def test_tuple_inputs():
     assert T0.op == T1.op
     assert T0.value_index == 0
     assert T1.value_index == 1
-
+    
 
 def test_tuple_with_different_deps():
     m = te.size_var("m")
