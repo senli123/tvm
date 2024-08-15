@@ -116,3 +116,81 @@ target = "llvm"
 save_model = True
 save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/t2t_vit_t_14_8xb64_in1k/output'
 ```
+
+
+#### encnet
+```python
+model_dict = {
+    'model_path':'D:/project/model_zoo/encnet_r50_d8_4xb2_40k_cityscapes_512x1024/model.pt',
+    'mode':'pt',
+    'input_info':[
+        {
+            "input_name":"x",
+            'bin_path':'',
+            'input_shape':[1,3,512,1024]
+         },
+    ]
+}
+target = "llvm"
+save_model = True
+save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/encnet/output'
+```
+
+
+#### msinet
+```python
+model_dict = {
+    'model_path':'D:/project/model_zoo/msinet/msinet.pt',
+    'mode':'pt',
+    'input_info':[
+        {
+            "input_name":"x",
+            'bin_path':'',
+            'input_shape':[1,3,128,256]
+         },
+    ]
+}
+target = "llvm"
+save_model = True
+save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/msinet/output'
+```
+
+#### fcanet34
+```python
+model_dict = {
+    'model_path':'D:/project/model_zoo/fcanet34/model.pt',
+    'mode':'pt',
+     'input_info':[
+         {
+            "input_name":"x",
+             'bin_path':'',
+             'input_shape':[1,3,224,224]
+          },
+     ]
+ }
+target = "llvm"# save_model = True
+save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/fcanet34/output'
+```
+
+
+
+#### AdelaiDepth
+```python
+model_dict = {
+    'model_path':'D:/project/model_zoo/AdelaiDepth/depth_model.onnx',
+    'mode':'onnx',
+    'input_info':[
+        {
+            "input_name":"input0",
+            'bin_path':'D:/project/model_zoo/AdelaiDepth/input_1x3x448x448.bin',
+            'input_shape':[1,3,448,448]
+         },
+    ]
+}
+target = "llvm"
+save_model = True
+save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/onnx/AdelaiDepth/output'
+
+os.makedirs(save_dir, exist_ok= True)
+load_model_flag = False
+```

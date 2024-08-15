@@ -272,7 +272,7 @@ class CodegenCModule {
     os << "#include <string.h>\n";
     os << "#include <tvm/runtime/c_runtime_api.h>\n";
     os << "#include <tvm/runtime/c_backend_api.h>\n";
-
+    os << "#include <tvm/runtime/logging.h>\n";
     if (needs_extra_headers_) {
       // This segment would be generated in C++ because of the usage
       // of tvm::runtime::Array. This is not ideal, but this to demonstrate
@@ -283,7 +283,6 @@ class CodegenCModule {
       os << "#include <tvm/runtime/packed_func.h>\n";
       os << "#endif\n";
     }
-
     // Define some macros to help operator implementations.
     const char* operator_macro = R"op_macro(
     #define CSOURCE_BINARY_OP_1D(p_ID_, p_OP_, p_DIM1_, p_DTYPE)       \

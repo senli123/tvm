@@ -129,7 +129,10 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         input_bin_path = input_info_dict['bin_path']
         input_shape = input_info_dict['input_shape']
         # prepare input data
-        input_array = np.fromfile(input_bin_path, dtype=np.float32).reshape(input_shape)
+        if not os.path.exists(input_bin_path):
+            input_array = np.random.uniform(size = input_shape).astype(np.float32)
+        else:
+            input_array = np.fromfile(input_bin_path, dtype=np.float32).reshape(input_shape)
         # if mode == 'pt':
         #     input_name = 'input' + str(index)
         # elif mode == 'onnx':

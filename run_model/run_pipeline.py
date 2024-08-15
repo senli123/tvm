@@ -24,142 +24,107 @@ import torch
 # export_pt_tvm(input_pt_path, input_bin_path, input_shape, target, save_model, load_model_flag, save_dir)
 
 
-#t2t_vit_t_14_8xb64_in1k
+
+# test model
+# model_dict = {
+#     'model_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
+#             'input_shape':[1,3,224,224]
+#          },
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/output1'
+
+# axial50s failed
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/axial50s/model.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
+#             'input_shape':[1,3,224,224]
+#          },
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/axial50s/output'
+
+
+
+
+# gfl_r50_fpn_1x_coco failed
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/gfl_r50_fpn_1x_coco/model.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'D:/project/model_zoo/gfl_r50_fpn_1x_coco/input_1x3x1333x800.bin',
+#             'input_shape':[1,3,1333,800]
+#          },
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# save_dir = 'D:/project/model_zoo/gfl_r50_fpn_1x_coco/output'
+
+# GFNet onnx pass
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/GFnet/GFNet_sim.onnx',
+#     'mode':'onnx',
+#     'input_info':[
+#         {
+#             "input_name":"input0",
+#             'bin_path':'',
+#             'input_shape':[1,1,181,217,181]
+#          },
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/onnx/GFNet/output'
+
+# GFNet pt paild
 model_dict = {
-    'model_path':'D:/project/model_zoo/t2t_vit_t_14_8xb64_in1k/model.pt',
+    'model_path':'D:/project/model_zoo/GFnet/GFNet.pt',
     'mode':'pt',
     'input_info':[
         {
-            "input_name":"inputs",
-            'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
-            'input_shape':[1,3,224,224]
+            "input_name":"x",
+            'bin_path':'',
+            'input_shape':[1,1,181,217,181]
          },
     ]
 }
 target = "llvm"
 save_model = True
-save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/t2t_vit_t_14_8xb64_in1k/output'
+save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/GFNet/output'
 
 
+#DDN pass
 # model_dict = {
-#     'model_path':'D:/project/programs/my_project/tests/test_python/test_op/model_zoo3/index5/index5.pt',
+#     'model_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/DDN/DDN.pt',
 #     'mode':'pt',
 #     'input_info':[
 #         {
-#             "input_name":"v_0",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/index/input0_4x2x3x4.bin',
-#             'input_shape':[4,2,3,4]
+#             "input_name":"HTy",
+#             'bin_path':'',
+#             'input_shape':[1,1,320,320]
 #          },
 #     ]
 # }
 # target = "llvm"
 # save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/index/output'
+# save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/DDN/output'
 
-# model_dict = {
-#     'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/index/index.pt',
-#     'mode':'pt',
-#     'input_info':[
-#         {
-#             "input_name":"x",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/index/index_input.bin',
-#             'input_shape':[1,3,7,56,228]
-#          },
-#     ]
-# }
-# target = "llvm"
-# save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/index/output'
-
-# model_dict = {
-#     'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/permute/permute.pt',
-#     'mode':'pt',
-#     'input_info':[
-#         {
-#             "input_name":"x",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/permute/permute_input.bin',
-#             'input_shape':[1,3,7,56,7,56]
-#          },
-#     ]
-# }
-# target = "llvm"
-# save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/permute/output'
-
-
-# model_dict = {
-#     'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/reshape/reshape.pt',
-#     'mode':'pt',
-#     'input_info':[
-#         {
-#             "input_name":"x",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/reshape/reshape_input.bin',
-#             'input_shape':[1,3,7,7,56,56]
-#          },
-#     ]
-# }
-# target = "llvm"
-# save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/reshape/output'
-
-
-# model_dict = {
-#     'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/pad/pad.pt',
-#     'mode':'pt',
-#     'input_info':[
-#         {
-#             "input_name":"x",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/pad/pad_input.bin',
-#             'input_shape':[1,3,224,224]
-#          },
-#     ]
-# }
-# target = "llvm"
-# save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/pad/output'
-
-
-#cat
-# model_dict = {
-#     # 'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/cat.pt',
-#     # 'mode':'pt',
-#     # 'input_info':[
-#     #     {
-#     #         "input_name":"x",
-#     #         'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/cat_input.bin',
-#     #         'input_shape':[1,196,384]
-#     #      },
-#     # ]
-    
-#     'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/onnx/cat/cat_sim.onnx',
-#     'mode':'onnx',
-#     'input_info':[
-#         {
-#             "input_name":"input0",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/onnx/cat/cat_input.bin',
-#             'input_shape':[1,196,384]
-#          },
-#     ]
-# }
-# target = "llvm"
-# save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/cat/output1'
-
-# test model
-# model_dict = {
-#     'model_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/test_model/test_model.pt',
-#     'mode':'pt',
-#     'input_info':[
-#         {
-#             "input_name":"x",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/test_model/test_model_input.bin',
-#             'input_shape':[1,3,224,224]
-#          },
-#     ]
-# }
-# target = "llvm"
-# save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/tvm/run_model/mode_zoo/pt/test_model/output'
 
 os.makedirs(save_dir, exist_ok= True)
 load_model_flag = False

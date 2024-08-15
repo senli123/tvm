@@ -312,6 +312,7 @@ class Device(ctypes.Structure):
         "ext_dev": kDLExtDev,
         "hexagon": kDLHexagon,
         "webgpu": kDLWebGPU,
+        "ccompiler":kDLCPU,
     }
 
     def __init__(self, device_type, device_id):
