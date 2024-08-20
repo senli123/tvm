@@ -18,7 +18,9 @@ def simlarity(torch_outs, tvm_outs):
         print("torch shape:{}, tvm shape:{}".format(torch_out.shape, tvm_out.shape))
         print("torch min:{}, tvm min:{}".format(np.min(torch_out), np.min(tvm_out)))
         print("torch max:{}, tvm max:{}".format(np.max(torch_out), np.max(tvm_out)))
-        print("simlarity: {}".format(1 - dist.cosine(torch_out.ravel().astype(np.float32), tvm_out.ravel().astype(np.float32))))
+        simlarity_value = 1 - dist.cosine(torch_out.ravel().astype(np.float32), tvm_out.ravel().astype(np.float32))
+        print("simlarity: {}".format(simlarity_value))
+            
 
 def save_llvm_ir(mod, target, mod_name):
     """保存LLVM IR的回调函数"""
@@ -110,7 +112,7 @@ def load_model(save_dir):
 
     return mod, loaded_params, loaded_lib
 
-def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag = False, save_dir = ''):
+def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag = False, save_dir = '', dump = False):
     # parse model_dict
     model_path = model_dict['model_path']
     mode = model_dict['mode']
@@ -124,12 +126,25 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         assert False, 'only support pt and onnx'
     shape_list = []
     image_list = []
+    if mode == 'pt' and 'input_data_dict_path' in model_dict:
+        input_data_dict_path = model_dict['input_data_dict_path']
+        tensors = torch.jit.load(input_data_dict_path)
+        if hasattr(tensors,'input_tensors'):
+            input_tensors = tensors.input_tensors
+            if not isinstance(input_tensors, list):
+               assert False, "please check input data" 
+        else:
+            assert False, "please check input data"
+    else:
+        input_data_dict_path = None
     for index, input_info_dict in enumerate(input_info):
         input_name = input_info_dict['input_name']
         input_bin_path = input_info_dict['bin_path']
         input_shape = input_info_dict['input_shape']
         # prepare input data
-        if not os.path.exists(input_bin_path):
+        if input_data_dict_path != None:
+             input_array = input_tensors[index].numpy()
+        elif not os.path.exists(input_bin_path):
             input_array = np.random.uniform(size = input_shape).astype(np.float32)
         else:
             input_array = np.fromfile(input_bin_path, dtype=np.float32).reshape(input_shape)
@@ -182,9 +197,23 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
     # Execute the portable graph on TVM
     # ---------------------------------
     # Now we can try deploying the compiled model on target.
-    from tvm.contrib import graph_executor
+    if dump  and load_model_flag: 
+        dump_root = os.path.join(save_dir, 'tvmdbg')
+        os.makedirs(dump_root, exist_ok= True)
+        m = graph_executor.create(lib["get_graph_json"](), lib, dev, dump_root=dump_root)
+        
+    elif dump and not load_model_flag:
+        
+        from tvm.contrib.debugger.debug_executor import GraphModuleDebug
+        dump_root = os.path.join(save_dir, 'tvmdbg')
+        os.makedirs(dump_root, exist_ok= True)
+        m = GraphModuleDebug(lib["debug_create"]("default", dev), [dev], lib.graph_json, dump_root=dump_root)
+        
+    else:
+        
+        from tvm.contrib import graph_executor
 
-    m = graph_executor.GraphModule(lib["default"](dev))
+        m = graph_executor.GraphModule(lib["default"](dev))
 
     # cal spend time 
     # tvm_time_spent=[]
@@ -242,8 +271,7 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         # 准备输入数据  
         numpy_out = sess.run(None, input_dict)[0]
     simlarity(numpy_out, tvm_out)
-       
-        
+   
     
     ######################################################################
     if( (not load_model_flag) and save_model_flag):
