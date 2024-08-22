@@ -29,9 +29,12 @@
 20240819
 1. Add relax test
 
-
 20240820
 1. Add dump function
+
+20240822
+1. Add pixel_unshuffle
+2. Add compare layers function
 
 
 

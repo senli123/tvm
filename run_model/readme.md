@@ -194,3 +194,22 @@ save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/onnx/
 os.makedirs(save_dir, exist_ok= True)
 load_model_flag = False
 ```
+
+
+#### depth_model
+```python
+model_dict = {
+    'model_path':'D:/project/model_zoo/AdelaiDepth/depth_model.pt',
+    'mode':'pt',
+    'input_info':[
+         {
+            "input_name":"rgb",
+            'bin_path':'',
+            'input_shape':[1,3,640,640]
+         }
+    ]
+}
+target = "llvm"
+save_model = True
+model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/AdelaiDepth' 
+```

@@ -25,21 +25,7 @@ import torch
 
 
 
-# test model
-# model_dict = {
-#     'model_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model.pt',
-#     'mode':'pt',
-#     'input_info':[
-#         {
-#             "input_name":"x",
-#             'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
-#             'input_shape':[1,3,224,224]
-#          },
-#     ]
-# }
-# target = "llvm"
-# save_model = True
-# save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/output1'
+
 
 # axial50s failed
 # model_dict = {
@@ -93,20 +79,20 @@ import torch
 # save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/onnx/GFNet/output'
 
 # GFNet pt paild
-model_dict = {
-    'model_path':'D:/project/model_zoo/GFnet/GFNet.pt',
-    'mode':'pt',
-    'input_info':[
-        {
-            "input_name":"x",
-            'bin_path':'',
-            'input_shape':[1,1,181,217,181]
-         },
-    ]
-}
-target = "llvm"
-save_model = True
-save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/GFNet/output'
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/GFnet/GFNet.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'',
+#             'input_shape':[1,1,181,217,181]
+#          },
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/GFNet/output'
 
 
 #DDN pass
@@ -126,10 +112,142 @@ save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/GF
 # save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/DDN/output'
 
 
-os.makedirs(save_dir, exist_ok= True)
-load_model_flag = False
+# mvitv2 failed
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/mvitv2/model.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'',
+#             'input_shape':[1,3,224, 224]
+#          },
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/mvitv2'
 
-export_pt_tvm(model_dict, target, save_model, load_model_flag, save_dir)
+# PASSRnet failed
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/PASSRnet/model.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x_left",
+#             'bin_path':'',
+#             'input_shape':[1,3,512, 512]
+#          },
+#          {
+#             "input_name":"x_right",
+#             'bin_path':'',
+#             'input_shape':[1,3,512, 512]
+#          }
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/PASSRnet' #Y:/trans_onnx/cvpr2019/PASSRnet-master/PASSRnet-master 中间有代码是拿numpy去写的必须用torch.export图去解析
+
+# postfilter
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/postfilter/test_img/out111/model.pt',
+#     'mode':'pt',
+#     'input_data_dict_path': 'D:/project/programs/ncnn_project/nvppnnx/model_zoo/postfilter_3/input_tensor_container.pt',
+#         'input_info':[
+#          {
+#             "input_name":"box",
+#             'bin_path':'',
+#             'input_shape':[1,4,1,60]
+#          },
+#           {
+#             "input_name":"score",
+#             'bin_path':'',
+#             'input_shape':[1,1,1,60]
+#          },
+#            {
+#             "input_name":"label",
+#             'bin_path':'',
+#             'input_shape':[1,1,1,60]
+#          },
+#         {
+#             "input_name":"mask",
+#             'bin_path':'',
+#             'input_shape':[1,60,64,64]
+#          }
+         
+#     ]
+# }
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/postfilter_3'
+
+
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/rtm/RtmPreprocess.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'',
+#             'input_shape':[1,3,1878,1764]
+#          },
+#     ]
+# }
+# target = "llvm"
+# save_model = True
+# model_dir = 'D:/project/model_zoo/rtm/output'
+
+# hair failed
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/HAIR-main/hair.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'',
+#             'input_shape':[1,3,128,128]
+#          },
+#     ]
+# }
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/HAIR-main'
+
+# swinir
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/SwinIR/swinir.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'D:/project/model_zoo/SwinIR/1x3x264x264.bin',
+#             'input_shape':[1,3,264,264]
+#          },
+#     ]
+# }
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/SwinIR'
+
+
+# test model
+model_dict = {
+    'model_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model.pt',
+    'mode':'pt',
+    'input_info':[
+        {
+            "input_name":"x",
+            'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
+            'input_shape':[1,3,224,224]
+         },
+    ]
+}
+model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/output3'
+
+os.makedirs(model_dir, exist_ok= True)
+save_dir = model_dir + '/output'
+os.makedirs(save_dir, exist_ok= True)
+
+target = "llvm"
+save_model = True
+load_model_flag = False
+dump = True
+export_pt_tvm(model_dict, target, save_model, load_model_flag, save_dir, dump)
 # import torch
 # import time
 # import tvm

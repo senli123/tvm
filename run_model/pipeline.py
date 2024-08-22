@@ -1,5 +1,6 @@
 
 import os
+from typing import List
 import time
 import numpy as np
 import torch 
@@ -11,6 +12,7 @@ import platform
 from tvm import relay
 import onnxruntime as rt
 import sys
+import pickle
 def simlarity(torch_outs, tvm_outs):
     assert len(torch_outs) == len(tvm_outs), "torch_out must equal to tvm_out"
     for index, (torch_out, tvm_out) in enumerate(zip(torch_outs, tvm_outs)):
@@ -112,6 +114,74 @@ def load_model(save_dir):
 
     return mod, loaded_params, loaded_lib
 
+
+def dump_pt_data(model, ptpath, input_data, pt_dump_root):
+
+    def createTuple(graph2: torch.Graph, values:List[torch.Value]) -> torch.Node:
+        """_summary_
+            refer to
+            torch\csrc\jit\ir\ir.cpp  Node* Graph::createTuple(at::ArrayRef<Value*> values, TupleTypePtr tuple_type)
+        Args:
+            values (List[torch.Value]): _description_
+
+        Returns:
+            torch.Node: _description_
+        """
+        types = [v.type() for v in values]
+        tuple_type = torch.TupleType(types)
+        n : torch.Node = graph2.create('prim::TupleConstruct', values, 1) 
+        n.output().setType(tuple_type)
+        return n
+    
+    dump_pt_data = {}
+    
+    graph1 :torch._C.Graph = model.graph.copy()
+    names1 = []
+    for cur_node1 in graph1.nodes():
+        for cur_output1 in cur_node1.outputs():
+            tensor_type = cur_output1.type()
+            if(not tensor_type.isSubtypeOf(torch.TensorType.get())):
+                continue
+            names1.append(cur_output1.debugName())
+    
+    mod2:torch.jit.ScriptModule = torch.load(ptpath)
+    # mod2 = model.copy()
+    mod2.eval()
+
+    graph2 :torch._C.Graph = mod2.graph
+   
+    values2: List[torch.Value] = []
+    names = []
+    for cur_node2 in graph2.nodes():
+        for cur_output2 in cur_node2.outputs():
+            tensor_type = cur_output2.type()
+            if(not tensor_type.isSubtypeOf(torch.TensorType.get())):
+                continue
+            values2.append(cur_output2)
+            names.append(cur_output2.debugName())
+    
+     # set new graph output
+    new_return_node = createTuple(graph2, values2)
+
+    graph2.appendNode(new_return_node)
+
+    graph2.eraseOutput(0)
+    graph2.registerOutput(list(new_return_node.outputs())[0])
+    
+    outputs = mod2.forward(*input_data)
+    for out, v, scr_name, dst_name in zip(outputs, values2, names, names1):
+        t2 = out.detach().numpy()
+        value_name = v.debugName()
+        assert value_name == scr_name
+        dump_pt_data[dst_name] = t2
+    
+    pickle_file_path  = os.path.join(pt_dump_root, 'data.pkl')
+    with open(pickle_file_path, 'wb') as f:  
+        pickle.dump(dump_pt_data, f)  
+    
+    return list(dump_pt_data.keys())
+    
+    
 def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag = False, save_dir = '', dump = False):
     # parse model_dict
     model_path = model_dict['model_path']
@@ -180,7 +250,7 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         # -------------------------
         # Convert PyTorch graph to Relay graph. The input name can be arbitrary.
         if mode == 'pt':
-            mod, params = relay.frontend.from_pytorch(model, shape_list)
+            mod, params, dump_tensor_names, dump_node_name_dict = relay.frontend.from_pytorch(model, shape_list, dump = dump)
         elif mode == 'onnx':
             shape_dict = {}
             for input_name, input_shape in shape_list:
@@ -198,6 +268,7 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
     # ---------------------------------
     # Now we can try deploying the compiled model on target.
     if dump  and load_model_flag: 
+        from tvm.contrib import graph_executor
         dump_root = os.path.join(save_dir, 'tvmdbg')
         os.makedirs(dump_root, exist_ok= True)
         m = graph_executor.create(lib["get_graph_json"](), lib, dev, dump_root=dump_root)
@@ -211,8 +282,8 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         
     else:
         
+        
         from tvm.contrib import graph_executor
-
         m = graph_executor.GraphModule(lib["default"](dev))
 
     # cal spend time 
@@ -249,28 +320,55 @@ def export_pt_tvm(model_dict, target, save_model_flag = False, load_model_flag =
         tvm_out.append(tvm_output.asnumpy())
 
     # ########################################################################
-    
-    # compare
-    if mode == 'pt':
+    if not dump:
+        # compare
+        if mode == 'pt':
+            image_list = [torch.from_numpy(image) for image in  image_list]
+            torch_out = model(*image_list)
+            if isinstance(torch_out, list) or isinstance(torch_out, tuple):
+                numpy_out = [single_out.detach().numpy() for single_out in torch_out]
+            else:
+                numpy_out = [torch_out.detach().numpy()]
+        
+        elif mode == 'onnx':
+            sess = rt.InferenceSession(model_path) 
+            input_dict = {}
+            for index, image_array in enumerate(image_list):
+        
+                input_name = sess.get_inputs()[index].name 
+                input_dict[input_name] = image_array
+            output_name = sess.get_outputs()[0].name  
+
+            # 准备输入数据  
+            numpy_out = sess.run(None, input_dict)[0]
+        simlarity(numpy_out, tvm_out)
+    else:
+        assert mode == 'pt', 'only support torchscript dump data'
+        pt_dump_root = os.path.join(save_dir, 'ptdbg')
+        os.makedirs(pt_dump_root, exist_ok= True)
+        pickle_file_path  = os.path.join(pt_dump_root, 'data.pkl')
+        json_file_path  = os.path.join(pt_dump_root, 'tensor_name.json')
         image_list = [torch.from_numpy(image) for image in  image_list]
         torch_out = model(*image_list)
-        if isinstance(torch_out, list) or isinstance(torch_out, tuple):
-            numpy_out = [single_out.detach().numpy() for single_out in torch_out]
-        else:
-            numpy_out = [torch_out.detach().numpy()]
-       
-    elif mode == 'onnx':
-        sess = rt.InferenceSession(model_path) 
-        input_dict = {}
-        for index, image_array in enumerate(image_list):
-      
-            input_name = sess.get_inputs()[index].name 
-            input_dict[input_name] = image_array
-        output_name = sess.get_outputs()[0].name  
+        
+        dump_pt_data = {}
+        for tensor_name, out in zip(dump_tensor_names, torch_out):
+            dump_pt_data[tensor_name] = out
+        
+        with open(pickle_file_path, 'wb') as f:  
+            pickle.dump(dump_pt_data, f)  
 
-        # 准备输入数据  
-        numpy_out = sess.run(None, input_dict)[0]
-    simlarity(numpy_out, tvm_out)
+        import json  
+
+        dump_info = {  
+            "dump_tensor_names": dump_tensor_names,  
+            "dump_node_name_dict":dump_node_name_dict
+        }  
+        
+        with open(json_file_path, 'w', encoding='utf-8') as f:  
+          
+            json.dump(dump_info, f, indent=4) 
+        
    
     
     ######################################################################

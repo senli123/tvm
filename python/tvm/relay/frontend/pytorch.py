@@ -1723,6 +1723,41 @@ class PyTorchOpConverter:
         data = _op.transform.transpose(data, axes)
         return _op.transform.reshape(data, out_shape)
 
+
+    def pixel_unshuffle(self, inputs, input_types):
+        data = inputs[0]
+        upscale_factor = inputs[1]
+        upscale_squared = upscale_factor * upscale_factor
+        b, c, h, w = self.infer_shape(data)
+        assert (
+            h % upscale_factor == 0
+        ), "input height should be divisible by square of upscale_factor"
+
+        assert (
+            w % upscale_factor == 0
+        ), "input width should be divisible by square of upscale_factor"
+
+
+        ndims = len(self.infer_shape_with_prelude(data))
+        axes = list(range(ndims))
+        num_inputs = len(inputs)
+        oc = c * upscale_factor ** 2
+        oh = h // upscale_factor
+        ow = w // upscale_factor
+
+        new_shape1 = [b, c, -1]
+        new_shape2 = [b, c, oh, upscale_factor, ow, upscale_factor]
+        out_shape = [b, oc, oh, ow]
+
+        data = _op.transform.reshape(data, new_shape1)
+        data = _op.transform.reshape(data, new_shape2)
+        # The data will be transposed to
+        # [b, oc, h, upscale_factor, w, upscale_factor]
+        # for further reshape
+        axes = [0, 1, 3, 5, 2, 4]
+        data = _op.transform.transpose(data, axes)
+        return _op.transform.reshape(data, out_shape)
+    
     def clone(self, inputs, input_types):
         data = inputs[0]
         return _op.tensor.copy(data)
@@ -4091,6 +4126,7 @@ class PyTorchOpConverter:
         self.convert_map = {
             "aten::is_floating_point": self.is_floating_point,
             "aten::pixel_shuffle": self.pixel_shuffle,
+            "aten::pixel_unshuffle": self.pixel_unshuffle,
             "aten::device": self.none,
             "prim::device": self.none,
             "aten::sub": self.sub,
@@ -5354,6 +5390,7 @@ def from_pytorch(
     keep_quantized_weight=False,
     export_renamed_c_graph_path=None,
     preserve_pytorch_scopes=False,
+    dump = False
 ):
     """Load PyTorch model in the form of a scripted PyTorch model and convert into relay.
     The companion parameters will be handled automatically.
@@ -5423,7 +5460,7 @@ def from_pytorch(
         prelude, default_dtype, use_parser_friendly_name, preserve_pytorch_scopes
     )
 
-    graph = script_module.graph.copy()
+    graph = script_module.graph
 
     # Check if lower_all_tuples pass can be enabled
     graph_inputs = list(graph.inputs())
@@ -5453,6 +5490,7 @@ def from_pytorch(
 
     # rename _C.Graph here for constructing meaningful source name of graph nodes
     # by doing so, we could Use source_map as the reference to rename model parameters
+    
     source_map = _debug_rename(graph, use_parser_friendly_name, preserve_pytorch_scopes)
     param_vars, tensors, packed_param_map, param_debug_name_map = convert_params(
         graph, params, source_map, use_parser_friendly_name
@@ -5526,4 +5564,51 @@ def from_pytorch(
     if export_renamed_c_graph_path:
         export_c_graph(export_renamed_c_graph_path, graph)
 
-    return transform.RemoveUnusedFunctions()(mod), tvm_params
+    if dump:
+        def createTuple(graph2: torch.Graph, values) -> torch.Node:
+            """_summary_
+                refer to
+                torch\csrc\jit\ir\ir.cpp  Node* Graph::createTuple(at::ArrayRef<Value*> values, TupleTypePtr tuple_type)
+            Args:
+                values (List[torch.Value]): _description_
+
+            Returns:
+                torch.Node: _description_
+            """
+            types = [v.type() for v in values]
+            tuple_type = torch.TupleType(types)
+            n : torch.Node = graph2.create('prim::TupleConstruct', values, 1) 
+            n.output().setType(tuple_type)
+            return n
+        
+        node_name_dict = {}
+        values2 = []
+        names = []
+        for cur_node2 in graph.nodes():
+            for cur_output2 in cur_node2.outputs():
+                tensor_type = cur_output2.type()
+                if(not tensor_type.isSubtypeOf(torch.TensorType.get())):
+                    continue
+                if cur_node2 in source_map:
+                    values2.append(cur_output2)
+                    names.append(cur_output2.debugName())
+                    node_name = source_map[cur_node2]
+                    if node_name in node_name_dict:
+                        node_name_dict[node_name].append(cur_output2.debugName())
+                    else:
+                        node_name_dict[node_name] = [cur_output2.debugName()]
+        
+        # set new graph output
+        new_return_node = createTuple(graph, values2)
+
+        graph.appendNode(new_return_node)
+
+        graph.eraseOutput(0)
+        graph.registerOutput(list(new_return_node.outputs())[0])
+    else:
+        node_name_dict = {}
+        names = []
+    
+    
+    
+    return transform.RemoveUnusedFunctions()(mod), tvm_params, names, node_name_dict

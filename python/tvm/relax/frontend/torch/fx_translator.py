@@ -1476,6 +1476,7 @@ class TorchFXImporter:
             "getitem": self._getitem,
             "contiguous": lambda node: self.env[node.args[0]],
             "to": self._to,
+            "_to_copy": self._to,
             "max_pool2d": self._max_pool2d,
             "avg_pool2d": self._avg_pool2d,
             "adaptive_avg_pool2d": self._adaptive_avg_pool2d(is_module=False),
@@ -1492,6 +1493,7 @@ class TorchFXImporter:
             "cross_entropy": self._cross_entropy,
             "scaled_dot_product_attention": self._scaled_dot_product_attention,
             "einsum": self._einsum,
+            "detach": lambda node: self.env[node.args[0]],
         }
 
     def update_convert_map(self, custom_convert_map: dict):
@@ -1597,6 +1599,8 @@ class TorchFXImporter:
                         self.env[node] = self.convert_map[type(module)](node)
                     elif node.op == "call_function":
                         func_name = node.target.__name__
+                        if func_name.endswith(".default"):
+                            func_name = func_name.split(".")[0]
                         assert (
                             func_name in self.convert_map
                         ), f"Unsupported function type {func_name}"
