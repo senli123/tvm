@@ -224,20 +224,62 @@ import torch
 # }
 # model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/SwinIR'
 
+#nafnet failed
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/NAFNet/basicsr/models/archs/NAFNet.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'D:/project/model_zoo/NAFNet/1x3x256x256.bin',
+#             'input_shape':[1,3,256,256]
+#          },
+#     ]
+# }
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/NAFNet'
 
-# test model
+# transweather pass
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/TransWeather/transweather.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'D:/project/model_zoo/NAFNet/1x3x256x256.bin',
+#             'input_shape':[1,3,256,256]
+#          },
+#     ]
+# }
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/transweather'
+
+# promptir pass
 model_dict = {
-    'model_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model.pt',
+    'model_path':'D:/project/model_zoo/PromptIR/promptir.pt',
     'mode':'pt',
     'input_info':[
         {
             "input_name":"x",
-            'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
-            'input_shape':[1,3,224,224]
+            'bin_path':'D:/project/model_zoo/PromptIR/1x3x320x480.bin',
+            'input_shape':[1,3,320,480]
          },
     ]
 }
-model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/output3'
+model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/promptir'
+
+
+# test model
+# model_dict = {
+#     'model_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model_input.bin',
+#             'input_shape':[1,3,224,224]
+#          },
+#     ]
+# }
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/output3'
 
 os.makedirs(model_dir, exist_ok= True)
 save_dir = model_dir + '/output'
@@ -246,7 +288,7 @@ os.makedirs(save_dir, exist_ok= True)
 target = "llvm"
 save_model = True
 load_model_flag = False
-dump = True
+dump = False
 export_pt_tvm(model_dict, target, save_model, load_model_flag, save_dir, dump)
 # import torch
 # import time
