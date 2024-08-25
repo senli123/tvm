@@ -15,13 +15,13 @@ def get_node_attr(node):
         return {"shape": "ellipse"}
     return {"shape": "box"}
 
-def visual_relay_by_graphviz():
+def visual_relay_by_graphviz(mod, param):
     
     from tvm.contrib import relay_viz
-    from tvm.relay.testing import mlp
+    
 
     # 获取vgg网络的IRModule和param
-    mod, param = mlp.get_workload(batch_size=1, num_classes=10)
+    # mod, param = mlp.get_workload(batch_size=1, num_classes=10)
 
     # graphviz属性
     graph_attr = {"color": "red"}
@@ -194,11 +194,11 @@ class Hdf5Plotter(Plotter):
             self._save_attr_to_group(g, 'layer_names', [layer['name'].encode('utf8') for layer in layers])
             f.close()
             
-def visual_relay_by_netron():
-    from tvm.relay.testing import mlp
+def visual_relay_by_netron(mod, param):
+   
     from tvm.contrib import relay_viz
 
-    mod, param = mlp.get_workload(batch_size=1, num_classes=10)
+    # mod, param = mlp.get_workload(batch_size=1, num_classes=10)
     print("mod:{}\n\n".format(mod))
 
     viz = relay_viz.RelayVisualizer(
@@ -210,7 +210,22 @@ def visual_relay_by_netron():
     viz.render('mlp')            
 
 if __name__ == "__main__":
+    
+    # from tvm.relay.testing import mlp
+    # mod, param = mlp.get_workload(batch_size=1, num_classes=10)
+
+    from parse_relay_ir import get_relay
+    model_path = '/workspace/my_tvm/model_zoo/pt/test_model/test_model.pt'
+    save_dir = '/workspace/my_tvm/model_zoo/pt/test_model'
+    shape_list = [('x', [1,3,224,224])]
+    dump = False
+    load_model = False 
+    
+    mod, param = get_relay(model_path, save_dir, shape_list, dump,  load_model)
+
+    
+    
     # visual relay by graphviz
-    # visual_relay_by_graphviz()
+    visual_relay_by_graphviz(mod, param)
     #
-    visual_relay_by_netron()
+    # visual_relay_by_netron(mod, param)

@@ -258,6 +258,7 @@ class DefaultVizParser(VizParser):
         viz_node = VizNode(node_id, f"Call {op_name}", "\n".join(node_detail))
         args = [node_to_id[arg] for arg in node.args]
         viz_edges = [VizEdge(arg, node_id) for arg in args]
+        # node.span.source_name.name
         return viz_node, viz_edges
 
     def _tuple(

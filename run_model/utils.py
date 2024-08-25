@@ -11,7 +11,8 @@ import platform
 if platform.system() == "Windows":  
     save_dir = r'D:\project\programs\other_project\tvm_project\tvm\run_model\mode_zoo'
 elif platform.system() == "Linux": 
-    save_dir = '/workspace/trans_onnx/project/tvm/run_model/model_zoo'
+    # save_dir = '/workspace/trans_onnx/project/tvm/run_model/model_zoo'
+    save_dir = '/workspace/my_tvm/model_zoo'
 else:    
     assert False, "noly support win and linux"
 
@@ -98,27 +99,27 @@ class CatModel(nn.Module):
 
 
 def export_model():
-    pt_flag = False
-    # model = TestModel()
+    pt_flag = True
+    model = TestModel()
     # model = IndexModel()
     # model = PermuteModel()
     # model = ReshapeModel()
     # model = PadModel()
-    model = CatModel()
+    # model = CatModel()
     model.eval()
-    # input = torch.randn([1,3,224,224])
+    input = torch.randn([1,3,224,224])
     # input = torch.randn([1,3,228,228])
     # input = torch.randn([1,3,7,56,228])
     # input = torch.randn([1,3,7,56,7,56])
     # input = torch.randn([1,3,7,7,56,56])
     # input = torch.randn([1,3,224,224])
-    input = torch.randn([1,196,384])
+    # input = torch.randn([1,196,384])
     model_name = 'test_model'
-    model_name = 'index'
-    model_name = 'permute'
-    model_name = 'reshape'
-    model_name = 'pad'
-    model_name = 'cat'
+    # model_name = 'index'
+    # model_name = 'permute'
+    # model_name = 'reshape'
+    # model_name = 'pad'
+    # model_name = 'cat'
     if pt_flag:
         ir_path = os.path.join(save_dir, 'pt', model_name)
     else:
