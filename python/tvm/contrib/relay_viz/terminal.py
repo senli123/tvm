@@ -66,7 +66,11 @@ class TermVizParser(VizParser):
 
     def _call(self, node, node_to_id):
         node_id = node_to_id[node]
-        viz_node = VizNode(node_id, "Call", "")
+        op_name = node.op.name
+        node_detail = []
+        if node.attrs:
+            node_detail = [f"{k}: {node.attrs.get_str(k)}" for k in node.attrs.keys()]
+        viz_node = VizNode(node_id, f"Call {op_name}", "\n".join(node_detail), node.span.source_name.name)
         viz_edges = [VizEdge(node_to_id[node.op], node_id)]
         for arg in node.args:
             arg_id = node_to_id[arg]
@@ -120,7 +124,7 @@ class TermNode:
         self.type = viz_node.type_name
         # We don't want too many lines in a terminal.
         self.other_info = viz_node.detail.replace("\n", ", ")
-
+        self.span_info = viz_node._node_span
 
 class TermGraph(VizGraph):
     """Terminal graph for a relay IR Module
@@ -136,6 +140,7 @@ class TermGraph(VizGraph):
         # A graph in adjacency list form.
         # The key is source node, and the value is a list of destination nodes.
         self._graph = {}
+        self.src2dst = {}
         # a hash table for quick searching.
         self._id_to_term_node = {}
         # node_id in reversed post order
@@ -179,6 +184,11 @@ class TermGraph(VizGraph):
             self._graph[viz_edge.end].append(viz_edge.start)
         else:
             self._graph[viz_edge.end] = [viz_edge.start]
+            
+        if viz_edge.start in self.src2dst:
+            self.src2dst[viz_edge.start].append(viz_edge.end)
+        else:
+            self.src2dst[viz_edge.start] = [viz_edge.end]
 
     def render(self) -> str:
         """Draw a terminal graph

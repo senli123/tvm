@@ -38,7 +38,8 @@ def visual_relay_by_graphviz(mod, param):
         mod,
         relay_param=param,
         plotter=dot_plotter,   # 传入定义的plotter
-        parser=relay_viz.DotVizParser())
+        parser=relay_viz.DotVizParser(),
+        visual_mod = 1)
 
     # 渲染生成 pdf
     viz.render("mlp")
@@ -76,7 +77,7 @@ class Hdf5Node:
         if len(detail) == 0:
             return {}
 
-        ds = detail.split("\n")
+        ds = detail.split("/n")
         params = {}
         for p in ds:
             k, v = p.split(":")
@@ -199,7 +200,7 @@ def visual_relay_by_netron(mod, param):
     from tvm.contrib import relay_viz
 
     # mod, param = mlp.get_workload(batch_size=1, num_classes=10)
-    print("mod:{}\n\n".format(mod))
+    print("mod:{}/n/n".format(mod))
 
     viz = relay_viz.RelayVisualizer(
         mod,
@@ -215,8 +216,12 @@ if __name__ == "__main__":
     # mod, param = mlp.get_workload(batch_size=1, num_classes=10)
 
     from parse_relay_ir import get_relay
-    model_path = '/workspace/my_tvm/model_zoo/pt/test_model/test_model.pt'
-    save_dir = '/workspace/my_tvm/model_zoo/pt/test_model'
+    # model_path = '/workspace/my_tvm/model_zoo/pt/test_model/test_model.pt'
+    # save_dir = '/workspace/my_tvm/model_zoo/pt/test_model'
+    
+    model_path = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/test_model.pt'
+    save_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/test_model/output'
+
     shape_list = [('x', [1,3,224,224])]
     dump = False
     load_model = False 

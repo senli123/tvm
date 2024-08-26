@@ -42,10 +42,11 @@ class VizNode:
         Any supplement for this node such as attributes.
     """
 
-    def __init__(self, node_id: str, node_type: str, node_detail: str):
+    def __init__(self, node_id: str, node_type: str, node_detail: str, node_span: str = ''):
         self._id = node_id
         self._type = node_type
         self._detail = node_detail
+        self._node_span = node_span
 
     @property
     def identity(self) -> str:
@@ -58,10 +59,14 @@ class VizNode:
     @property
     def detail(self) -> str:
         return self._detail
+    
+    @property
+    def span(self) -> str:
+        return self._node_span
 
     def __repr__(self) -> str:
         detail = self._detail.replace("\n", ", ")
-        return f"VizNode(identity: {self._id}, type_name: {self._type}, detail: {detail}"
+        return f"VizNode(identity: {self._id}, type_name: {self._type}, detail: {detail}, span: {self._node_span}"
 
 
 class VizEdge:
@@ -255,10 +260,11 @@ class DefaultVizParser(VizParser):
             op_name = str(type(node.op)).split(".")[-1].split("'")[0]
 
         # Arguments -> CallNode
-        viz_node = VizNode(node_id, f"Call {op_name}", "\n".join(node_detail))
+        #node.span.source_name.name
+        viz_node = VizNode(node_id, f"Call {op_name}", "\n".join(node_detail), node.span.source_name.name)
         args = [node_to_id[arg] for arg in node.args]
         viz_edges = [VizEdge(arg, node_id) for arg in args]
-        # node.span.source_name.name
+        
         return viz_node, viz_edges
 
     def _tuple(

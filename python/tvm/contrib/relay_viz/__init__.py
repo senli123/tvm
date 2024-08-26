@@ -56,10 +56,28 @@ class RelayVisualizer:
         relay_param: Dict[str, tvm.runtime.NDArray] = None,
         plotter: Plotter = None,
         parser: VizParser = None,
+        visual_mod : int = 0,  #0: only for visual  1: only for parse 2: visual and parse
     ):
-        self._plotter = plotter if plotter is not None else TermPlotter()
+        if visual_mod == 0:
+            
+            self.visual_plotter = plotter if plotter is not None else TermPlotter()
+            self.visual_parser = parser if parser is not None else TermVizParser()
+            
+        elif visual_mod == 1:
+            
+            self._plotter = TermPlotter()
+            self._parser = TermVizParser()
+           
+        elif visual_mod == 2:
+            
+            self._plotter = TermPlotter()
+            self._parser = TermVizParser()
+            self.visual_plotter = plotter if plotter is not None else TermPlotter()
+            self.visual_parser = parser if parser is not None else TermVizParser()
+        else:
+            assert False, 'visual mode only support 0, 1 or 2'
+        self._visual_mod = visual_mod
         self._relay_param = relay_param if relay_param is not None else {}
-        self._parser = parser if parser is not None else TermVizParser()
 
         global_vars = relay_mod.get_global_vars()
         graph_names = []
@@ -85,8 +103,19 @@ class RelayVisualizer:
             node_count_offset += len(node_to_id)
             node_to_id.clear()
             relay.analysis.post_order_visit(relay_mod[name], traverse_expr)
-            graph = self._plotter.create_graph(name)
-            self._add_nodes(graph, node_to_id)
+            if self._visual_mod == 0:
+                visual_graph = self.visual_plotter.create_graph(name)
+                self._add_nodes(visual_graph, node_to_id)
+            elif self._visual_mod == 1:
+                graph = self._plotter.create_graph(name)
+                self._add_nodes(graph, node_to_id)
+            elif self._visual_mod == 2:
+                visual_graph = self.visual_plotter.create_graph(name)
+                graph = self._plotter.create_graph(name)
+                self._add_nodes(visual_graph, node_to_id)
+                self._add_nodes(graph, node_to_id)
+    
+            print(123)
 
     def _add_nodes(self, graph: VizGraph, node_to_id: Dict[relay.Expr, str]):
         """add nodes and to the graph.
@@ -110,4 +139,6 @@ class RelayVisualizer:
                 graph.edge(edge)
 
     def render(self, filename: str = None) -> None:
+        if self._visual_mod == 1:
+            assert False, "if visual_node is 1, it is not support visual"
         self._plotter.render(filename=filename)
