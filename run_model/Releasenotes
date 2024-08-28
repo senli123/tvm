@@ -43,5 +43,8 @@
 1. Update visual function
 2. Update visual and parse relay ir function
 
+20240829
+1. Finish parse relay ir to dict
+2. Finish visual relay ir to ncnn.param
 
 

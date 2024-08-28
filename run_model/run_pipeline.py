@@ -253,18 +253,32 @@ import torch
 # model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/transweather'
 
 # promptir pass
+# model_dict = {
+#     'model_path':'D:/project/model_zoo/PromptIR/promptir.pt',
+#     'mode':'pt',
+#     'input_info':[
+#         {
+#             "input_name":"x",
+#             'bin_path':'D:/project/model_zoo/PromptIR/1x3x320x480.bin',
+#             'input_shape':[1,3,320,480]
+#          },
+#     ]
+# }
+# model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/promptir'
+
+# depth-anything2
 model_dict = {
-    'model_path':'D:/project/model_zoo/PromptIR/promptir.pt',
-    'mode':'pt',
+    'model_path':'D:/project/model_zoo/segment-anything-2/onnx/depth-anythingv2/vits_sim.onnx',
+    'mode':'onnx',
     'input_info':[
         {
-            "input_name":"x",
-            'bin_path':'D:/project/model_zoo/PromptIR/1x3x320x480.bin',
-            'input_shape':[1,3,320,480]
+            "input_name":"image",
+            'bin_path':'',
+            'input_shape':[1,3,518,518]
          },
     ]
 }
-model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/pt/promptir'
+model_dir = 'D:/project/programs/other_project/tvm_project/new_tvm/mode_zoo/onnx/depth-anythingv2'
 
 
 # test model

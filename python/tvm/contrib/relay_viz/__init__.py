@@ -105,19 +105,17 @@ class RelayVisualizer:
             relay.analysis.post_order_visit(relay_mod[name], traverse_expr)
             if self._visual_mod == 0:
                 visual_graph = self.visual_plotter.create_graph(name)
-                self._add_nodes(visual_graph, node_to_id)
+                self._add_nodes(visual_graph, node_to_id, self.visual_parser)
             elif self._visual_mod == 1:
                 graph = self._plotter.create_graph(name)
-                self._add_nodes(graph, node_to_id)
+                self._add_nodes(graph, node_to_id, self._parser)
             elif self._visual_mod == 2:
                 visual_graph = self.visual_plotter.create_graph(name)
                 graph = self._plotter.create_graph(name)
-                self._add_nodes(visual_graph, node_to_id)
-                self._add_nodes(graph, node_to_id)
-    
-            print(123)
+                self._add_nodes(visual_graph, node_to_id, self.visual_parser)
+                self._add_nodes(graph, node_to_id, self._parser)
 
-    def _add_nodes(self, graph: VizGraph, node_to_id: Dict[relay.Expr, str]):
+    def _add_nodes(self, graph: VizGraph, node_to_id: Dict[relay.Expr, str], _parser: TermVizParser):
         """add nodes and to the graph.
 
         Parameters
@@ -132,7 +130,7 @@ class RelayVisualizer:
             relay parameter dictionary.
         """
         for node in node_to_id:
-            viz_node, viz_edges = self._parser.get_node_edges(node, self._relay_param, node_to_id)
+            viz_node, viz_edges = _parser.get_node_edges(node, self._relay_param, node_to_id)
             if viz_node is not None:
                 graph.node(viz_node)
             for edge in viz_edges:
@@ -141,4 +139,8 @@ class RelayVisualizer:
     def render(self, filename: str = None) -> None:
         if self._visual_mod == 1:
             assert False, "if visual_node is 1, it is not support visual"
-        self._plotter.render(filename=filename)
+        self.visual_plotter.render(filename=filename)
+        
+    
+    def get_graph_info(self,):
+        return list(self._plotter._name_to_graph.values())[0], self._relay_param
